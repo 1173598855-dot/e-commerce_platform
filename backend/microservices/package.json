@@ -1,0 +1,33 @@
+{
+  "name": "ecommerce-microservices",
+  "version": "1.0.0",
+  "description": "电商微服务架构",
+  "main": "gateway/index.js",
+  "scripts": {
+    "start:gateway": "node gateway/index.js",
+    "start:user": "node user-service/index.js",
+    "start:product": "node product-service/index.js",
+    "start:order": "node order-service/index.js",
+    "start:mq": "node mq-service/index.js",
+    "start:search": "node search-service/index.js",
+    "start:all": "concurrently \"npm run start:user\" \"npm run start:product\" \"npm run start:order\" \"npm run start:mq\" \"npm run start:search\" \"npm run start:gateway\"",
+    "test": "jest"
+  },
+  "dependencies": {
+    "axios": "^1.6.5",
+    "bcryptjs": "^2.4.3",
+    "concurrently": "^8.2.2",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-validator": "^7.0.1",
+    "http-proxy": "^1.18.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.6.5",
+    "redis": "^4.6.10"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  }
+}

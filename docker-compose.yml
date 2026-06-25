@@ -1,0 +1,184 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: ecommerce-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ecommerce
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - ecommerce-net
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - ecommerce-net
+
+  # 用户微服务
+  user-service:
+    build: ./backend/microservices/user-service
+    container_name: ecommerce-user-service
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: ecommerce
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ecommerce_jwt_secret_key_2024
+      NODE_ENV: production
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - ecommerce-net
+
+  # 商品微服务
+  product-service:
+    build: ./backend/microservices/product-service
+    container_name: ecommerce-product-service
+    restart: always
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: ecommerce
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ecommerce_jwt_secret_key_2024
+      NODE_ENV: production
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - ecommerce-net
+
+  # 订单微服务
+  order-service:
+    build: ./backend/microservices/order-service
+    container_name: ecommerce-order-service
+    restart: always
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: ecommerce
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ecommerce_jwt_secret_key_2024
+      NODE_ENV: production
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - ecommerce-net
+
+  # 消息队列服务
+  mq-service:
+    build: ./backend/microservices/mq-service
+    container_name: ecommerce-mq-service
+    restart: always
+    ports:
+      - "3004:3004"
+    environment:
+      PORT: 3004
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: ecommerce
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ecommerce_jwt_secret_key_2024
+      NODE_ENV: production
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - ecommerce-net
+
+  # 搜索服务
+  search-service:
+    build: ./backend/microservices/search-service
+    container_name: ecommerce-search-service
+    restart: always
+    ports:
+      - "3005:3005"
+    environment:
+      PORT: 3005
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: ecommerce
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ecommerce_jwt_secret_key_2024
+      NODE_ENV: production
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - ecommerce-net
+
+  # API 网关
+  gateway:
+    build: ./backend/microservices/gateway
+    container_name: ecommerce-gateway
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      GATEWAY_PORT: 3000
+      USER_SERVICE_PORT: 3001
+      PRODUCT_SERVICE_PORT: 3002
+      ORDER_SERVICE_PORT: 3003
+      MQ_SERVICE_PORT: 3004
+      SEARCH_SERVICE_PORT: 3005
+      NODE_ENV: production
+    depends_on:
+      - user-service
+      - product-service
+      - order-service
+      - mq-service
+      - search-service
+    networks:
+      - ecommerce-net
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  ecommerce-net:
+    driver: bridge

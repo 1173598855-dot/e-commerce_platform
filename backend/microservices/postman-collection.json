@@ -1,0 +1,239 @@
+{
+  "info": {
+    "_postman_id": "ecommerce-api-collection",
+    "name": "电商微服务 API 测试集合",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "用户服务",
+      "item": [
+        {
+          "name": "用户注册",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"13800138000\",\n  \"password\": \"Test123456\",\n  \"nickname\": \"测试用户\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/register",
+              "host": ["{{base_url}}"],
+              "path": ["user", "register"]
+            }
+          }
+        },
+        {
+          "name": "短信登录",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"13800138000\",\n  \"code\": \"1234\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/sms-login",
+              "host": ["{{base_url}}"],
+              "path": ["user", "sms-login"]
+            }
+          }
+        },
+        {
+          "name": "获取用户信息",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/user/profile",
+              "host": ["{{base_url}}"],
+              "path": ["user", "profile"]
+            }
+          }
+        },
+        {
+          "name": "健康检查",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/user/health",
+              "host": ["{{base_url}}"],
+              "path": ["user", "health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "商品服务",
+      "item": [
+        {
+          "name": "搜索商品",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/product/?keyword=手机&page=1&pageSize=10",
+              "host": ["{{base_url}}"],
+              "path": ["product", ""],
+              "query": [
+                { "key": "keyword", "value": "手机" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "获取热门商品",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/product/hot",
+              "host": ["{{base_url}}"],
+              "path": ["product", "hot"]
+            }
+          }
+        },
+        {
+          "name": "获取商品详情",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/product/1",
+              "host": ["{{base_url}}"],
+              "path": ["product", "1"]
+            }
+          }
+        },
+        {
+          "name": "健康检查",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/product/health",
+              "host": ["{{base_url}}"],
+              "path": ["product", "health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "订单服务",
+      "item": [
+        {
+          "name": "获取订单列表",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/order/?page=1&pageSize=10",
+              "host": ["{{base_url}}"],
+              "path": ["order", ""],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "创建订单",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"merchant_id\": 1,\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"product_name\": \"测试商品\",\n      \"quantity\": 1\n    }\n  ],\n  \"address_id\": 1,\n  \"remark\": \"测试订单\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/order/",
+              "host": ["{{base_url}}"],
+              "path": ["order", ""]
+            }
+          }
+        },
+        {
+          "name": "健康检查",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/order/health",
+              "host": ["{{base_url}}"],
+              "path": ["order", "health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "搜索服务",
+      "item": [
+        {
+          "name": "搜索商品",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/search/?keyword=手机&page=1&pageSize=10",
+              "host": ["{{base_url}}"],
+              "path": ["search", ""],
+              "query": [
+                { "key": "keyword", "value": "手机" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "获取搜索建议",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/search/suggestions?keyword=手",
+              "host": ["{{base_url}}"],
+              "path": ["search", "suggestions"],
+              "query": [
+                { "key": "keyword", "value": "手" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "保存搜索历史",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"keyword\": \"智能手机\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/search/history",
+              "host": ["{{base_url}}"],
+              "path": ["search", "history"]
+            }
+          }
+        },
+        {
+          "name": "健康检查",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/search/health",
+              "host": ["{{base_url}}"],
+              "path": ["search", "health"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
