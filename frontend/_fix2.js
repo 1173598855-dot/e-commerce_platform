@@ -1,0 +1,6 @@
+const fs = require('fs');
+const p = 'C:/GitHub/E_commerce/frontend/src/screens/OrderCreateScreen.js';
+let s = fs.readFileSync(p, 'utf8');
+s = s.replace(/Alert.alert(.+/¥.+\n/, '      Alert.alert('\u4e0b\u5355\u6210\u529f', `\u8ba2\u5355\u91d1\u989d: ¥`, [\n');
+fs.writeFileSync(p, s, 'utf8');
+console.log('Done');

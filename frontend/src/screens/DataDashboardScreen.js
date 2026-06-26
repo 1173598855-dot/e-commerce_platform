@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, StyleSheet, RefreshControl, Dimensions } from "react-native";
 import { dataApi } from "../api";
 
@@ -64,7 +64,7 @@ export default function DataDashboardScreen() {
             <Text style={styles.statLabel}>总订单</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>¥{parseFloat(overview.todayAmount || 0).toFixed(0)}</Text>
+            <Text style={styles.statValue}>Y{parseFloat(overview.todayAmount || 0).toFixed(0)}</Text>
             <Text style={styles.statLabel}>今日销售额</Text>
           </View>
         </View>
@@ -81,7 +81,7 @@ export default function DataDashboardScreen() {
           <View style={styles.todayRow}>
             <Text style={styles.todayLabel}>今日销售额</Text>
             <Text style={[styles.todayValue, { color: "#ff6b35" }]}>
-              ¥{parseFloat(overview.todayAmount || 0).toFixed(2)}
+              Y{parseFloat(overview.todayAmount || 0).toFixed(2)}
             </Text>
           </View>
         </View>
@@ -103,7 +103,7 @@ export default function DataDashboardScreen() {
                   />
                 </View>
                 <Text style={styles.barLabel}>{t.date ? t.date.substring(5) : ""}</Text>
-                <Text style={styles.barValue}>¥{parseFloat(t.amount || 0).toFixed(0)}</Text>
+                <Text style={styles.barValue}>Y{parseFloat(t.amount || 0).toFixed(0)}</Text>
               </View>
             ))}
           </View>
@@ -123,7 +123,7 @@ export default function DataDashboardScreen() {
                 <Text style={styles.rankName} numberOfLines={1}>{item.name}</Text>
                 <Text style={styles.rankSales}>销量: {item.total_sold || 0}</Text>
               </View>
-              <Text style={styles.rankAmount}>¥{parseFloat(item.total_amount || 0).toFixed(0)}</Text>
+              <Text style={styles.rankAmount}>Y{parseFloat(item.total_amount || 0).toFixed(0)}</Text>
             </View>
           ))}
         </View>

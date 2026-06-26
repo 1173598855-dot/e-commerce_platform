@@ -1,9 +1,9 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Alert, FlatList, Image
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from 'react-native-vector-icons';
 import { reviewApi, orderApi } from '../api';
 
 export default function ReviewScreen({ route, navigation }) {
@@ -29,13 +29,13 @@ export default function ReviewScreen({ route, navigation }) {
         }
       }
     } catch (err) {
-      console.error('加载订单商品失败:', err);
+      console.error('ضƷʧ:', err);
     }
   };
 
   const handleSubmit = async () => {
     if (!content.trim()) {
-      Alert.alert('提示', '请至少输入一些评价内容');
+      Alert.alert('ʾ', 'һЩ');
       return;
     }
 
@@ -48,11 +48,11 @@ export default function ReviewScreen({ route, navigation }) {
         content,
         images: [],
       });
-      Alert.alert('成功', '评价提交成功！积分+10', [
-        { text: '好的', onPress: () => navigation.goBack() },
+      Alert.alert('ɹ', 'ύɹ+10', [
+        { text: 'õ', onPress: () => navigation.goBack() },
       ]);
     } catch (err) {
-      Alert.alert('失败', err.message);
+      Alert.alert('ʧ', err.message);
     } finally {
       setLoading(false);
     }
@@ -74,35 +74,35 @@ export default function ReviewScreen({ route, navigation }) {
         </TouchableOpacity>
       ))}
       <Text style={styles.starText}>
-        {['很差', '较差', '一般', '不错', '很棒'][value - 1]}
+        {['ܲ', 'ϲ', 'һ', '', 'ܰ'][value - 1]}
       </Text>
     </View>
   );
 
   return (
     <ScrollView style={styles.container}>
-      {/* 商品信息 */}
+      {/* ƷϢ */}
       <View style={styles.productCard}>
         <View style={styles.productImage}>
-          <Text style={styles.imgPlaceholder}>📷</Text>
+          <Text style={styles.imgPlaceholder}>??</Text>
         </View>
         <View style={styles.productInfo}>
-          <Text style={styles.productName}>{productInfo?.name || '商品'}</Text>
+          <Text style={styles.productName}>{productInfo?.name || 'Ʒ'}</Text>
           <Text style={styles.productPrice}>
-            ¥{productInfo?.price || '0.00'}
+            {productInfo?.price || '0.00'}
           </Text>
         </View>
       </View>
 
-      {/* 评分 */}
+      {/*  */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>商品评分</Text>
+        <Text style={styles.sectionTitle}>Ʒ</Text>
         <StarRating value={rating} onChange={setRating} />
       </View>
 
-      {/* 评价内容 */}
+      {/*  */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>评价内容</Text>
+        <Text style={styles.sectionTitle}></Text>
         <View style={styles.textareaWrap}>
           <Text
             style={styles.textarea}
@@ -110,21 +110,21 @@ export default function ReviewScreen({ route, navigation }) {
             numberOfLines={8}
             value={content}
             onChangeText={setContent}
-            placeholder="分享你的购物体验，帮助其他买家..."
+            placeholder="Ĺ飬..."
           />
         </View>
         <Text style={styles.charCount}>{content.length}/500</Text>
       </View>
 
-      {/* 匿名评价 */}
+      {/*  */}
       <View style={styles.section}>
         <TouchableOpacity style={styles.checkboxRow}>
           <Ionicons name="checkbox" size={22} color="#ff6b35" />
-          <Text style={styles.checkboxText}>匿名评价</Text>
+          <Text style={styles.checkboxText}></Text>
         </TouchableOpacity>
       </View>
 
-      {/* 提交按钮 */}
+      {/* ύť */}
       <View style={styles.submitSection}>
         <TouchableOpacity
           style={[styles.submitBtn, loading && styles.submitBtnLoading]}
@@ -132,7 +132,7 @@ export default function ReviewScreen({ route, navigation }) {
           disabled={loading}
         >
           <Text style={styles.submitText}>
-            {loading ? '提交中...' : '提交评价'}
+            {loading ? 'ύ...' : 'ύ'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -163,3 +163,4 @@ const styles = StyleSheet.create({
   submitBtnLoading: { opacity: 0.7 },
   submitText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });
+

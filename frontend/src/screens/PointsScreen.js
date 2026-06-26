@@ -1,8 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from 'react-native-vector-icons';
 import { pointsApi } from '../api';
 
 export default function PointsScreen() {
@@ -23,7 +23,7 @@ export default function PointsScreen() {
       setPoints(ptsRes.data.points || 0);
       setLogs(logsRes.data?.list || []);
     } catch (err) {
-      console.error('加载积分失败:', err);
+      console.error('ػʧ:', err);
     }
   };
 
@@ -45,7 +45,7 @@ export default function PointsScreen() {
           />
         </View>
         <View style={styles.logInfo}>
-          <Text style={styles.logDesc}>{item.description || (isGain ? '获得积分' : '消耗积分')}</Text>
+          <Text style={styles.logDesc}>{item.description || (isGain ? 'û' : 'Ļ')}</Text>
           <Text style={styles.logTime}>{new Date(item.created_at).toLocaleDateString()}</Text>
         </View>
         <Text style={[styles.logPoints, { color: isGain ? '#ff6b35' : '#666' }]}>
@@ -57,26 +57,26 @@ export default function PointsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 积分卡片 */}
+      {/* ֿƬ */}
       <View style={styles.pointsCard}>
-        <Text style={styles.pointsLabel}>我的积分</Text>
+        <Text style={styles.pointsLabel}>ҵĻ</Text>
         <Text style={styles.pointsValue}>{points}</Text>
-        <Text style={styles.pointsHint}>积分可兑换商品和优惠券</Text>
+        <Text style={styles.pointsHint}>ֿɶһƷŻȯ</Text>
         <View style={styles.pointsActions}>
           <TouchableOpacity style={styles.pointsActionBtn}>
             <Ionicons name="gift-outline" size={20} color="#ff6b35" />
-            <Text style={styles.pointsActionText}>积分兑换</Text>
+            <Text style={styles.pointsActionText}>ֶһ</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.pointsActionBtn}>
             <Ionicons name="information-circle-outline" size={20} color="#ff6b35" />
-            <Text style={styles.pointsActionText}>积分规则</Text>
+            <Text style={styles.pointsActionText}>ֹ</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* 积分明细 */}
+      {/* ϸ */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>积分明细</Text>
+        <Text style={styles.sectionTitle}>ϸ</Text>
         <FlatList
           data={logs}
           keyExtractor={(item) => item.id.toString()}
@@ -85,7 +85,7 @@ export default function PointsScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="receipt-outline" size={48} color="#ddd" />
-              <Text style={styles.emptyText}>暂无积分记录</Text>
+              <Text style={styles.emptyText}>޻ּ¼</Text>
             </View>
           }
         />
@@ -114,3 +114,4 @@ const styles = StyleSheet.create({
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
   emptyText: { fontSize: 15, color: '#999', marginTop: 12 },
 });
+

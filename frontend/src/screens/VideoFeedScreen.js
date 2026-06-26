@@ -1,8 +1,8 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Image
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "react-native-vector-icons";
 import { api } from "../api";
 
 export default function VideoFeedScreen({ navigation }) {
@@ -19,7 +19,7 @@ export default function VideoFeedScreen({ navigation }) {
       const res = await api.get("/videos");
       setVideos(res.data?.list || []);
     } catch (err) {
-      console.error("加载短视频失败:", err);
+      console.error("ضƵʧ:", err);
     }
   };
 
@@ -40,12 +40,12 @@ export default function VideoFeedScreen({ navigation }) {
 
   const renderVideo = ({ item, index }) => (
     <View style={styles.videoCard}>
-      {/* 视频封面 */}
+      {/* Ƶ */}
       <View style={styles.videoCover}>
-        <Text style={styles.videoPlaceholder}>🎬</Text>
+        <Text style={styles.videoPlaceholder}>??</Text>
       </View>
 
-      {/* 右侧操作按钮 */}
+      {/* Ҳť */}
       <View style={styles.actionBar}>
         <TouchableOpacity style={styles.actionBtn} onPress={() => handleLike(item.id)}>
           <Ionicons name="heart" size={28} color="#ff4444" />
@@ -61,14 +61,14 @@ export default function VideoFeedScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* 底部信息 */}
+      {/* ײϢ */}
       <View style={styles.videoInfo}>
-        <Text style={styles.authorName}>@{item.author_name || "作者"}</Text>
+        <Text style={styles.authorName}>@{item.author_name || ""}</Text>
         <Text style={styles.videoTitle} numberOfLines={2}>{item.title}</Text>
         {item.product_name && (
           <TouchableOpacity style={styles.productLink} onPress={() => navigation.navigate("ProductDetail", { id: item.product_id })}>
             <Ionicons name="shopping-bag" size={14} color="#ff6b35" />
-            <Text style={styles.productName}>{item.product_name} ¥{item.price}</Text>
+            <Text style={styles.productName}>{item.product_name} {item.price}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -85,7 +85,7 @@ export default function VideoFeedScreen({ navigation }) {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="videocam-outline" size={48} color="#ddd" />
-            <Text style={styles.emptyText}>暂无短视频</Text>
+            <Text style={styles.emptyText}>޶Ƶ</Text>
           </View>
         }
       />
@@ -109,3 +109,4 @@ const styles = StyleSheet.create({
   empty: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 80 },
   emptyText: { fontSize: 15, color: "#999", marginTop: 12 },
 });
+

@@ -1,8 +1,8 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "react-native-vector-icons";
 import { aiApi, productApi } from "../api";
 
 export default function RecommendScreen({ navigation }) {
@@ -20,7 +20,7 @@ export default function RecommendScreen({ navigation }) {
       const res = await aiApi.getRecommendations({ limit: 20 });
       setProducts(res.data || []);
     } catch (err) {
-      console.error("加载推荐失败:", err);
+      console.error("Ƽʧ:", err);
     } finally {
       setLoading(false);
     }
@@ -50,7 +50,7 @@ export default function RecommendScreen({ navigation }) {
     return (
       <View style={styles.center}>
         <Ionicons name="hourglass-outline" size={40} color="#ff6b35" />
-        <Text style={styles.loadingText}>AI正在为你推荐...</Text>
+        <Text style={styles.loadingText}>AIΪƼ...</Text>
       </View>
     );
   }
@@ -65,19 +65,19 @@ export default function RecommendScreen({ navigation }) {
       renderItem={({ item }) => (
         <TouchableOpacity style={styles.card} onPress={() => handleProductClick(item)}>
           <View style={styles.image}>
-            <Text style={styles.imgPlaceholder}>📷</Text>
+            <Text style={styles.imgPlaceholder}>??</Text>
           </View>
           <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
-          <Text style={styles.price}>¥{item.price}</Text>
-          <Text style={styles.sales}>已售 {item.sales}</Text>
+          <Text style={styles.price}>{item.price}</Text>
+          <Text style={styles.sales}> {item.sales}</Text>
         </TouchableOpacity>
       )}
       ListEmptyComponent={
         <View style={styles.center}>
           <Ionicons name="sparkles-outline" size={48} color="#ddd" />
-          <Text style={styles.emptyText}>暂无推荐，试试搜索商品吧</Text>
+          <Text style={styles.emptyText}>ƼƷ</Text>
           <TouchableOpacity style={styles.refreshBtn} onPress={loadRecommendations}>
-            <Text style={styles.refreshText}>刷新推荐</Text>
+            <Text style={styles.refreshText}>ˢƼ</Text>
           </TouchableOpacity>
         </View>
       }
@@ -99,3 +99,4 @@ const styles = StyleSheet.create({
   refreshText: { color: "#fff", fontSize: 14 },
   emptyText: { fontSize: 15, color: "#999", marginTop: 12 },
 });
+

@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from 'react-native-vector-icons';
 import { categoryApi, productApi } from '../api';
 
 export default function CategoryScreen({ navigation }) {
@@ -22,7 +22,7 @@ export default function CategoryScreen({ navigation }) {
         loadProducts(res.data[0].id);
       }
     } catch (err) {
-      console.error('加载分类失败:', err);
+      console.error('طʧ:', err);
     }
   };
 
@@ -31,7 +31,7 @@ export default function CategoryScreen({ navigation }) {
       const res = await productApi.getList({ categoryId: catId, pageSize: 50 });
       setProducts(res.data?.list || []);
     } catch (err) {
-      console.error('加载商品失败:', err);
+      console.error('Ʒʧ:', err);
     }
   };
 
@@ -43,7 +43,7 @@ export default function CategoryScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* 左侧分类列表 */}
+      {/* б */}
       <View style={styles.leftPanel}>
         <FlatList
           data={categories}
@@ -65,7 +65,7 @@ export default function CategoryScreen({ navigation }) {
         />
       </View>
 
-      {/* 右侧商品列表 */}
+      {/* ҲƷб */}
       <View style={styles.rightPanel}>
         <Text style={styles.panelTitle}>{selectedCat?.icon} {selectedCat?.name}</Text>
         <FlatList
@@ -80,16 +80,16 @@ export default function CategoryScreen({ navigation }) {
               onPress={() => navigation.navigate('ProductDetail', { id: item.id })}
             >
               <View style={styles.cardImage}>
-                <Text style={styles.imgPlaceholder}>📷</Text>
+                <Text style={styles.imgPlaceholder}>??</Text>
               </View>
               <Text style={styles.cardTitle} numberOfLines={2}>{item.name}</Text>
-              <Text style={styles.cardPrice}>¥{item.price}</Text>
-              <Text style={styles.cardSales}>已售 {item.sales || 0}</Text>
+              <Text style={styles.cardPrice}>{item.price}</Text>
+              <Text style={styles.cardSales}> {item.sales || 0}</Text>
             </TouchableOpacity>
           )}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>暂无商品</Text>
+              <Text style={styles.emptyText}>Ʒ</Text>
             </View>
           }
         />
@@ -117,3 +117,4 @@ const styles = StyleSheet.create({
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
   emptyText: { fontSize: 14, color: '#999' },
 });
+

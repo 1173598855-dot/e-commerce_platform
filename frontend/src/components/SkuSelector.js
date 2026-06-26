@@ -2,7 +2,7 @@
 import {
   View, Text, Modal, TouchableOpacity, StyleSheet, ScrollView, Alert
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { skuApi, favoriteApi } from '../api';
 
 // SKU规格选择弹窗
@@ -178,3 +178,4 @@ const styles = StyleSheet.create({
   selectedStock: { fontSize: 13, color: '#999', marginTop: 4 },
   selectedCode: { fontSize: 12, color: '#bbb', marginTop: 2 },
 });
+

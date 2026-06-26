@@ -1,34 +1,34 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   Alert, TextInput
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from 'react-native-vector-icons';
 import { addressApi } from '../api';
 
-// 中国省份数据
-const PROVINCES = ['北京', '上海', '广州', '深圳', '浙江', '江苏', '四川', '湖北', '湖南', '福建', '安徽', '山东', '河南', '河北', '辽宁', '陕西', '江西', '云南', '广西', '海南'];
+// йʡ
+const PROVINCES = ['', 'Ϻ', '', '', '㽭', '', 'Ĵ', '', '', '', '', 'ɽ', '', 'ӱ', '', '', '', '', '', ''];
 const CITIES = {
-  '北京': ['东城区', '西城区', '朝阳区', '海淀区', '丰台区'],
-  '上海': ['黄浦区', '浦东新区', '静安区', '徐汇区', '长宁区'],
-  '广州': ['天河区', '越秀区', '海珠区', '荔湾区', '白云区'],
-  '深圳': ['福田区', '南山区', '罗湖区', '宝安区', '龙岗区'],
-  '浙江': ['杭州', '宁波', '温州', '嘉兴', '湖州'],
-  '江苏': ['南京', '苏州', '无锡', '常州', '徐州'],
-  '四川': ['成都', '绵阳', '德阳', '南充', '宜宾'],
-  '湖北': ['武汉', '宜昌', '襄阳', '荆州', '黄石'],
-  '湖南': ['长沙', '株洲', '湘潭', '衡阳', '岳阳'],
-  '福建': ['福州', '厦门', '泉州', '漳州', '莆田'],
-  '安徽': ['合肥', '芜湖', '蚌埠', '阜阳', '安庆'],
-  '山东': ['济南', '青岛', '烟台', '潍坊', '临沂'],
-  '河南': ['郑州', '洛阳', '开封', '南阳', '安阳'],
-  '河北': ['石家庄', '唐山', '秦皇岛', '邯郸', '保定'],
-  '辽宁': ['沈阳', '大连', '鞍山', '抚顺', '营口'],
-  '陕西': ['西安', '咸阳', '宝鸡', '榆林', '渭南'],
-  '江西': ['南昌', '九江', '赣州', '上饶', '宜春'],
-  '云南': ['昆明', '大理', '丽江', '曲靖', '玉溪'],
-  '广西': ['南宁', '柳州', '桂林', '梧州', '北海'],
-  '海南': ['海口', '三亚', '儋州', '文昌', '琼海'],
+  '': ['', '', '', '', '̨'],
+  'Ϻ': ['', 'ֶ', '', '', ''],
+  '': ['', 'Խ', '', '', ''],
+  '': ['', 'ɽ', '޺', '', ''],
+  '㽭': ['', '', '', '', ''],
+  '': ['Ͼ', '', '', '', ''],
+  'Ĵ': ['ɶ', '', '', 'ϳ', '˱'],
+  '': ['人', '˲', '', '', 'ʯ'],
+  '': ['ɳ', '', '̶', '', ''],
+  '': ['', '', 'Ȫ', '', ''],
+  '': ['Ϸ', 'ߺ', '', '', ''],
+  'ɽ': ['', 'ൺ', '̨', 'Ϋ', ''],
+  '': ['֣', '', '', '', ''],
+  'ӱ': ['ʯׯ', 'ɽ', 'ػʵ', '', ''],
+  '': ['', '', 'ɽ', '˳', 'Ӫ'],
+  '': ['', '', '', '', 'μ'],
+  '': ['ϲ', 'Ž', '', '', '˴'],
+  '': ['', '', '', '', 'Ϫ'],
+  '': ['', '', '', '', ''],
+  '': ['', '', '', 'Ĳ', ''],
 };
 
 export default function AddressScreen({ navigation, route }) {
@@ -36,7 +36,7 @@ export default function AddressScreen({ navigation, route }) {
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
 
-  // 表单字段
+  // ֶ
   const [receiverName, setReceiverName] = useState('');
   const [receiverPhone, setReceiverPhone] = useState('');
   const [province, setProvince] = useState('');
@@ -54,7 +54,7 @@ export default function AddressScreen({ navigation, route }) {
       const res = await addressApi.getList();
       setAddresses(res.data || []);
     } catch (err) {
-      console.error('加载地址失败:', err);
+      console.error('صַʧ:', err);
     }
   };
 
@@ -88,7 +88,7 @@ export default function AddressScreen({ navigation, route }) {
 
   const handleSave = async () => {
     if (!receiverName || !receiverPhone || !province || !city || !detailAddress) {
-      Alert.alert('提示', '请填写完整信息');
+      Alert.alert('ʾ', 'дϢ');
       return;
     }
 
@@ -108,26 +108,26 @@ export default function AddressScreen({ navigation, route }) {
       } else {
         await addressApi.add(data);
       }
-      Alert.alert('成功', editingId ? '地址已更新' : '地址已添加');
+      Alert.alert('ɹ', editingId ? 'ַѸ' : 'ַ');
       setShowForm(false);
       loadAddresses();
     } catch (err) {
-      Alert.alert('失败', err.message);
+      Alert.alert('ʧ', err.message);
     }
   };
 
   const handleDelete = (id) => {
-    Alert.alert('确认删除', '确定要删除该地址吗？', [
-      { text: '取消', style: 'cancel' },
+    Alert.alert('ȷɾ', 'ȷҪɾõַ', [
+      { text: 'ȡ', style: 'cancel' },
       {
-        text: '删除',
+        text: 'ɾ',
         style: 'destructive',
         onPress: async () => {
           try {
             await addressApi.remove(id);
             loadAddresses();
           } catch (err) {
-            Alert.alert('删除失败', err.message);
+            Alert.alert('ɾʧ', err.message);
           }
         },
       },
@@ -145,10 +145,10 @@ export default function AddressScreen({ navigation, route }) {
     if (!city && CITIES[province]) {
       return CITIES[province];
     }
-    return ['默认区域'];
+    return ['Ĭ'];
   };
 
-  // 表单视图
+  // ͼ
   if (showForm) {
     return (
       <View style={styles.container}>
@@ -156,35 +156,35 @@ export default function AddressScreen({ navigation, route }) {
           <TouchableOpacity onPress={() => setShowForm(false)}>
             <Ionicons name="close" size={24} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.formTitle}>{editingId ? '编辑地址' : '新增地址'}</Text>
+          <Text style={styles.formTitle}>{editingId ? '༭ַ' : 'ַ'}</Text>
           <TouchableOpacity onPress={handleSave}>
-            <Text style={styles.formSave}>保存</Text>
+            <Text style={styles.formSave}></Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.formBody}>
           <View style={styles.inputRow}>
-            <Text style={styles.label}>收货人</Text>
+            <Text style={styles.label}>ջ</Text>
             <TextInput
               style={styles.input}
               value={receiverName}
               onChangeText={setReceiverName}
-              placeholder="姓名"
+              placeholder=""
             />
           </View>
           <View style={styles.inputRow}>
-            <Text style={styles.label}>手机号</Text>
+            <Text style={styles.label}>ֻ</Text>
             <TextInput
               style={styles.input}
               value={receiverPhone}
               onChangeText={setReceiverPhone}
               keyboardType="phone-pad"
-              placeholder="11位手机号"
+              placeholder="11λֻ"
               maxLength={11}
             />
           </View>
           <View style={styles.inputRow}>
-            <Text style={styles.label}>省份</Text>
+            <Text style={styles.label}>ʡ</Text>
             <View style={styles.pickerRow}>
               <FlatList
                 data={PROVINCES}
@@ -204,10 +204,10 @@ export default function AddressScreen({ navigation, route }) {
           </View>
           {province && (
             <View style={styles.inputRow}>
-              <Text style={styles.label}>城市</Text>
+              <Text style={styles.label}></Text>
               <View style={styles.pickerRow}>
                 <FlatList
-                  data={CITIES[province] || ['默认城市']}
+                  data={CITIES[province] || ['Ĭϳ']}
                   horizontal
                   keyExtractor={item => item}
                   showsHorizontalScrollIndicator={false}
@@ -225,7 +225,7 @@ export default function AddressScreen({ navigation, route }) {
           )}
           {city && (
             <View style={styles.inputRow}>
-              <Text style={styles.label}>区县</Text>
+              <Text style={styles.label}></Text>
               <View style={styles.pickerRow}>
                 <FlatList
                   data={getDistricts()}
@@ -245,25 +245,25 @@ export default function AddressScreen({ navigation, route }) {
             </View>
           )}
           <View style={styles.inputRow}>
-            <Text style={styles.label}>详细地址</Text>
+            <Text style={styles.label}>ϸַ</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={detailAddress}
               onChangeText={setDetailAddress}
-              placeholder="街道、门牌号等"
+              placeholder="ֵƺŵ"
               multiline
             />
           </View>
           <TouchableOpacity style={styles.defaultRow} onPress={() => setIsDefault(!isDefault)}>
             <Ionicons name={isDefault ? 'checkmark-circle' : 'ellipse-outline'} size={22} color="#ff6b35" />
-            <Text style={styles.defaultText}>设为默认地址</Text>
+            <Text style={styles.defaultText}>ΪĬϵַ</Text>
           </TouchableOpacity>
         </View>
       </View>
     );
   }
 
-  // 列表视图
+  // бͼ
   return (
     <View style={styles.container}>
       <FlatList
@@ -276,7 +276,7 @@ export default function AddressScreen({ navigation, route }) {
           >
             <View style={styles.addressHeader}>
               <Text style={styles.receiver}>{item.receiver_name} {item.receiver_phone}</Text>
-              {item.is_default && <Text style={styles.defaultTag}>默认</Text>}
+              {item.is_default && <Text style={styles.defaultTag}>Ĭ</Text>}
             </View>
             <Text style={styles.fullAddress}>
               {item.province}{item.city}{item.district} {item.detail_address}
@@ -284,11 +284,11 @@ export default function AddressScreen({ navigation, route }) {
             <View style={styles.actionRow}>
               <TouchableOpacity style={styles.actionBtn} onPress={() => startEdit(item)}>
                 <Ionicons name="pencil" size={16} color="#ff6b35" />
-                <Text style={styles.actionText}>编辑</Text>
+                <Text style={styles.actionText}>༭</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionBtn} onPress={() => handleDelete(item.id)}>
                 <Ionicons name="trash" size={16} color="#ff4444" />
-                <Text style={[styles.actionText, { color: '#ff4444' }]}>删除</Text>
+                <Text style={[styles.actionText, { color: '#ff4444' }]}>ɾ</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
@@ -296,13 +296,13 @@ export default function AddressScreen({ navigation, route }) {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="location-outline" size={64} color="#ddd" />
-            <Text style={styles.emptyText}>暂无收货地址</Text>
+            <Text style={styles.emptyText}>ջַ</Text>
           </View>
         }
         ListFooterComponent={() => (
           <TouchableOpacity style={styles.addBtn} onPress={startAdd}>
             <Ionicons name="add-circle" size={20} color="#ff6b35" />
-            <Text style={styles.addBtnText}>添加新地址</Text>
+            <Text style={styles.addBtnText}>µַ</Text>
           </TouchableOpacity>
         )}
       />
@@ -341,3 +341,4 @@ const styles = StyleSheet.create({
   addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, backgroundColor: '#fff', borderRadius: 8, marginHorizontal: 16, marginBottom: 20 },
   addBtnText: { fontSize: 15, color: '#ff6b35', fontWeight: '500' },
 });
+

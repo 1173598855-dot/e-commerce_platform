@@ -1,9 +1,9 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   Alert, ActivityIndicator, Image
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from 'react-native-vector-icons';
 import { productApi, cartApi, favoriteApi } from '../api';
 import SkuSelector from '../components/SkuSelector';
 
@@ -28,7 +28,7 @@ export default function ProductDetailScreen({ route, navigation }) {
       setProduct(res.data);
       setLoading(false);
     } catch (err) {
-      Alert.alert('加载失败', err.message);
+      Alert.alert('ʧ', err.message);
       setLoading(false);
     }
   };
@@ -47,14 +47,14 @@ export default function ProductDetailScreen({ route, navigation }) {
       if (isFavorite) {
         await favoriteApi.remove({ product_id: id });
         setIsFavorite(false);
-        Alert.alert('提示', '已取消收藏');
+        Alert.alert('ʾ', 'ȡղ');
       } else {
         await favoriteApi.add({ product_id: id });
         setIsFavorite(true);
-        Alert.alert('提示', '已收藏');
+        Alert.alert('ʾ', 'ղ');
       }
     } catch (err) {
-      Alert.alert('操作失败', err.message);
+      Alert.alert('ʧ', err.message);
     }
   };
 
@@ -77,9 +77,9 @@ export default function ProductDetailScreen({ route, navigation }) {
         image: product.image,
       };
       await cartApi.addToCart(data);
-      Alert.alert('成功', '已加入购物车');
+      Alert.alert('ɹ', 'Ѽ빺ﳵ');
     } catch (err) {
-      Alert.alert('失败', err.message);
+      Alert.alert('ʧ', err.message);
     }
   };
 
@@ -113,71 +113,71 @@ export default function ProductDetailScreen({ route, navigation }) {
 
   return (
     <ScrollView style={styles.container}>
-      {/* 商品图片 */}
+      {/* ƷͼƬ */}
       <View style={styles.imageArea}>
-        <Text style={styles.imagePlaceholder}>📷</Text>
+        <Text style={styles.imagePlaceholder}>??</Text>
       </View>
 
-      {/* 基本信息 */}
+      {/* Ϣ */}
       <View style={styles.infoArea}>
         <View style={styles.priceRow}>
-          <Text style={styles.price}>¥{displayPrice}</Text>
+          <Text style={styles.price}>{displayPrice}</Text>
           {product.original_price && (
-            <Text style={styles.originalPrice}>¥{product.original_price}</Text>
+            <Text style={styles.originalPrice}>{product.original_price}</Text>
           )}
-          <Text style={styles.sales}>已售 {product.sales || 0}</Text>
+          <Text style={styles.sales}> {product.sales || 0}</Text>
         </View>
         <Text style={styles.name}>{product.name}</Text>
         <View style={styles.tags}>
-          <View style={styles.tag}><Text style={styles.tagText}>包邮</Text></View>
-          <View style={styles.tag}><Text style={styles.tagText}>正品保障</Text></View>
+          <View style={styles.tag}><Text style={styles.tagText}></Text></View>
+          <View style={styles.tag}><Text style={styles.tagText}>Ʒ</Text></View>
           {product.brand && <View style={styles.tag}><Text style={styles.tagText}>{product.brand}</Text></View>}
         </View>
       </View>
 
-      {/* SKU选择入口 */}
+      {/* SKUѡ */}
       {(product.spec_options || product.skus) && (
         <TouchableOpacity style={styles.skuCard} onPress={() => setShowSku(true)}>
-          <Text style={styles.skuLabel}>规格</Text>
+          <Text style={styles.skuLabel}></Text>
           <Text style={styles.skuValue}>
-            {selectedSku ? JSON.stringify(selectedSku.spec || {}) : '请选择规格'}
+            {selectedSku ? JSON.stringify(selectedSku.spec || {}) : 'ѡ'}
           </Text>
           <Ionicons name="chevron-forward" size={20} color="#ccc" />
         </TouchableOpacity>
       )}
 
-      {/* 规格参数 */}
+      {/*  */}
       <View style={styles.specCard}>
-        <Text style={styles.cardTitle}>规格参数</Text>
-        {product.brand && <SpecRow label="品牌" value={product.brand} />}
-        {product.category_name && <SpecRow label="分类" value={product.category_name} />}
-        <SpecRow label="库存" value={${product.stock} 件} />
-        {product.description && <SpecRow label="简介" value={product.description} />}
+        <Text style={styles.cardTitle}></Text>
+        {product.brand && <SpecRow label="Ʒ" value={product.brand} />}
+        {product.category_name && <SpecRow label="" value={product.category_name} />}
+        <SpecRow label="" value={`${product.stock} `} />
+        {product.description && <SpecRow label="" value={product.description} />}
       </View>
 
-      {/* 底部操作栏 */}
+      {/* ײ */}
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.bottomItem} onPress={toggleFavorite}>
           <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={24} color="#ff6b35" />
-          <Text style={styles.bottomItemText}>收藏</Text>
+          <Text style={styles.bottomItemText}>ղ</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.bottomItem} onPress={() => navigation.navigate('Reviews', { productId: id })}>
           <Ionicons name="chatbubble-outline" size={24} color="#ff6b35" />
-          <Text style={styles.bottomItemText}>评价</Text>
+          <Text style={styles.bottomItemText}></Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.bottomItem} onPress={() => navigation.navigate('Cart')}>
           <Ionicons name="cart-outline" size={24} color="#ff6b35" />
-          <Text style={styles.bottomItemText}>购物车</Text>
+          <Text style={styles.bottomItemText}>ﳵ</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.buyBtn} onPress={handleBuyNow}>
-          <Text style={styles.buyBtnText}>立即购买</Text>
+          <Text style={styles.buyBtnText}></Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.cartBtn} onPress={handleAddToCart}>
-          <Text style={styles.cartBtnText}>加入购物车</Text>
+          <Text style={styles.cartBtnText}>빺ﳵ</Text>
         </TouchableOpacity>
       </View>
 
-      {/* SKU选择弹窗 */}
+      {/* SKUѡ񵯴 */}
       <SkuSelector
         visible={showSku}
         productId={id}
@@ -227,3 +227,5 @@ const styles = StyleSheet.create({
   cartBtn: { paddingHorizontal: 18, paddingVertical: 12, backgroundColor: '#ff9a6c', borderRadius: 6, marginLeft: 4 },
   cartBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
 });
+
+

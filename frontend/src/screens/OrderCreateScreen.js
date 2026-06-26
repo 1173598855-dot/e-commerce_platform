@@ -1,8 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from 'react-native-vector-icons';
 import { orderApi, couponApi } from '../api';
 
 export default function OrderCreateScreen({ route, navigation }) {
@@ -42,11 +42,11 @@ export default function OrderCreateScreen({ route, navigation }) {
 
   const handleCreate = async () => {
     if (items.length === 0) {
-      Alert.alert('提示', '没有商品');
+      Alert.alert('ʾ', 'ûƷ');
       return;
     }
     if (!address) {
-      Alert.alert('提示', '请选择收货地址');
+      Alert.alert('ʾ', 'ѡջַ');
       return;
     }
 
@@ -69,15 +69,15 @@ export default function OrderCreateScreen({ route, navigation }) {
       const orderId = res.data.orderId;
       const amount = selectedCoupon ? finalAmount : res.data.totalAmount;
 
-      Alert.alert('下单成功', 订单金额: ¥, [
+      Alert.alert('µɹ', ': ' + amount, [
         {
-          text: '去支付',
+          text: 'ȥ֧',
           onPress: () => navigation.navigate('Payment', { orderId, amount }),
         },
-        { text: '完成', onPress: () => navigation.navigate('Main') },
+        { text: '', onPress: () => navigation.navigate('Main') },
       ]);
     } catch (err) {
-      Alert.alert('下单失败', err.message);
+      Alert.alert('µʧ', err.message);
     } finally {
       setSubmitting(false);
     }
@@ -89,7 +89,7 @@ export default function OrderCreateScreen({ route, navigation }) {
 
   return (
     <ScrollView style={styles.container}>
-      {/* 收货地址 */}
+      {/* ջַ */}
       <TouchableOpacity style={styles.addressCard} onPress={goToAddress}>
         {address ? (
           <View>
@@ -106,37 +106,37 @@ export default function OrderCreateScreen({ route, navigation }) {
         ) : (
           <View style={styles.addressRow}>
             <Ionicons name="location-outline" size={20} color="#999" />
-            <Text style={styles.noAddress}>请选择收货地址</Text>
+            <Text style={styles.noAddress}>ѡջַ</Text>
             <Ionicons name="chevron-forward" size={20} color="#ccc" />
           </View>
         )}
         <Ionicons name="chevron-forward" size={20} color="#ccc" />
       </TouchableOpacity>
 
-      {/* 商品信息 */}
+      {/* ƷϢ */}
       <View style={styles.goodsCard}>
-        <Text style={styles.cardTitle}>商品信息</Text>
+        <Text style={styles.cardTitle}>ƷϢ</Text>
         {items.map((item, i) => (
           <View key={i} style={styles.goodsItem}>
             <View style={styles.goodsImg}>
-              <Text style={styles.imgPlaceholder}>📷</Text>
+              <Text style={styles.imgPlaceholder}>??</Text>
             </View>
             <View style={styles.goodsInfo}>
-              <Text style={styles.goodsName} numberOfLines={2}>{item.name || item.product_name || '商品'}</Text>
-              <Text style={styles.goodsSpec}>{item.spec || '默认规格'}</Text>
+              <Text style={styles.goodsName} numberOfLines={2}>{item.name || item.product_name || 'Ʒ'}</Text>
+              <Text style={styles.goodsSpec}>{item.spec || 'ĬϹ'}</Text>
               <View style={styles.goodsPriceRow}>
-                <Text style={styles.goodsPrice}>¥{item.price}</Text>
-                <Text style={styles.goodsQty}>×{item.quantity || 1}</Text>
+                <Text style={styles.goodsPrice}>{item.price}</Text>
+                <Text style={styles.goodsQty}>{item.quantity || 1}</Text>
               </View>
             </View>
           </View>
         ))}
       </View>
 
-      {/* 优惠券 */}
+      {/* Żȯ */}
       {availableCoupons.length > 0 && (
         <View style={styles.couponCard}>
-          <Text style={styles.cardTitle}>优惠券</Text>
+          <Text style={styles.cardTitle}>Żȯ</Text>
           <TouchableOpacity
             style={styles.couponItem}
             onPress={() => {
@@ -151,14 +151,14 @@ export default function OrderCreateScreen({ route, navigation }) {
           >
             <View style={styles.couponLeft}>
               <Text style={styles.couponAmt}>
-                {availableCoupons[0].type === 2 ? '' : '¥'}{availableCoupons[0].discount_amount}
-                {availableCoupons[0].type === 2 ? '折' : ''}
+                {availableCoupons[0].type === 2 ? '' : ''}{availableCoupons[0].discount_amount}
+                {availableCoupons[0].type === 2 ? '' : ''}
               </Text>
               <Text style={styles.couponName}>{availableCoupons[0].name}</Text>
             </View>
             <View style={styles.couponRight}>
               <Text style={[styles.couponStatus, selectedCoupon && { color: '#ff6b35' }]}>
-                {selectedCoupon ? '已选择' : '可用'}
+                {selectedCoupon ? 'ѡ' : ''}
               </Text>
               <Ionicons name={selectedCoupon ? "checkmark-circle" : "ellipse-outline"} size={22} color="#ff6b35" />
             </View>
@@ -166,12 +166,12 @@ export default function OrderCreateScreen({ route, navigation }) {
         </View>
       )}
 
-      {/* 备注 */}
+      {/* ע */}
       <View style={styles.noteCard}>
-        <Text style={styles.cardTitle}>订单备注</Text>
+        <Text style={styles.cardTitle}>ע</Text>
         <TextInput
           style={styles.noteInput}
-          placeholder="选填：对商家的留言"
+          placeholder="ѡ̼ҵ"
           value={remark}
           onChangeText={setRemark}
           multiline
@@ -179,29 +179,29 @@ export default function OrderCreateScreen({ route, navigation }) {
         />
       </View>
 
-      {/* 费用明细 */}
+      {/* ϸ */}
       <View style={styles.feeCard}>
         <View style={styles.feeRow}>
-          <Text style={styles.feeLabel}>商品合计</Text>
-          <Text style={styles.feeValue}>¥{totalAmount.toFixed(2)}</Text>
+          <Text style={styles.feeLabel}>Ʒϼ</Text>
+          <Text style={styles.feeValue}>{totalAmount.toFixed(2)}</Text>
         </View>
         {discount > 0 && (
           <View style={styles.feeRow}>
-            <Text style={styles.feeLabel}>优惠券抵扣</Text>
-            <Text style={[styles.feeValue, { color: '#ff6b35' }]}>-¥{discount.toFixed(2)}</Text>
+            <Text style={styles.feeLabel}>Żȯֿ</Text>
+            <Text style={[styles.feeValue, { color: '#ff6b35' }]}>-{discount.toFixed(2)}</Text>
           </View>
         )}
         <View style={styles.feeRow}>
-          <Text style={styles.feeLabel}>运费</Text>
-          <Text style={styles.feeValue}>免运费</Text>
+          <Text style={styles.feeLabel}>˷</Text>
+          <Text style={styles.feeValue}>˷</Text>
         </View>
         <View style={[styles.feeRow, styles.totalRow]}>
-          <Text style={styles.totalLabel}>应付总额</Text>
-          <Text style={styles.totalAmount}>¥{finalAmount.toFixed(2)}</Text>
+          <Text style={styles.totalLabel}>Ӧܶ</Text>
+          <Text style={styles.totalAmount}>{finalAmount.toFixed(2)}</Text>
         </View>
       </View>
 
-      {/* 提交按钮 */}
+      {/* ύť */}
       <View style={styles.submitArea}>
         <TouchableOpacity
           style={[styles.submitBtn, submitting && styles.submitBtnLoading]}
@@ -209,7 +209,7 @@ export default function OrderCreateScreen({ route, navigation }) {
           disabled={submitting}
         >
           <Text style={styles.submitText}>
-            {submitting ? '提交中...' : 提交订单 ¥}
+            {submitting ? 'ύ...' : ύ }
           </Text>
         </TouchableOpacity>
       </View>
@@ -268,3 +268,5 @@ const styles = StyleSheet.create({
   submitBtnLoading: { opacity: 0.7 },
   submitText: { color: '#fff', fontSize: 17, fontWeight: '600' },
 });
+
+

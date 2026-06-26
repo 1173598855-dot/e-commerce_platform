@@ -1,9 +1,9 @@
-﻿import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet,
   KeyboardAvoidingView, Platform
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "react-native-vector-icons";
 import { chatApi } from "../api";
 
 export default function ChatScreen({ route, navigation }) {
@@ -34,7 +34,7 @@ export default function ChatScreen({ route, navigation }) {
       const res = await chatApi.getSessions();
       setSessions(res.data || []);
     } catch (err) {
-      console.error("加载会话失败:", err);
+      console.error("ػỰʧ:", err);
     }
   };
 
@@ -43,7 +43,7 @@ export default function ChatScreen({ route, navigation }) {
       const res = await chatApi.getMessages(otherUserId);
       setMessages(res.data || []);
     } catch (err) {
-      console.error("加载消息失败:", err);
+      console.error("Ϣʧ:", err);
     }
   };
 
@@ -91,7 +91,7 @@ export default function ChatScreen({ route, navigation }) {
           <Text style={styles.sessionName}>{item.nickname}</Text>
           <Text style={styles.sessionTime}>{new Date(item.last_message_time).toLocaleDateString()}</Text>
         </View>
-        <Text style={styles.sessionLastMsg} numberOfLines={1}>{item.last_content || "暂无消息"}</Text>
+        <Text style={styles.sessionLastMsg} numberOfLines={1}>{item.last_content || "Ϣ"}</Text>
       </View>
       {item.unread_count > 0 && (
         <View style={styles.badge}>
@@ -111,7 +111,7 @@ export default function ChatScreen({ route, navigation }) {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="chatbubbles-outline" size={48} color="#ddd" />
-              <Text style={styles.emptyText}>暂无聊天会话</Text>
+              <Text style={styles.emptyText}>Ự</Text>
             </View>
           }
         />
@@ -130,21 +130,21 @@ export default function ChatScreen({ route, navigation }) {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="chatbubbles-outline" size={48} color="#ddd" />
-            <Text style={styles.emptyText}>暂无消息</Text>
+            <Text style={styles.emptyText}>Ϣ</Text>
           </View>
         }
       />
       <View style={styles.inputArea}>
         <TextInput
           style={styles.input}
-          placeholder="输入消息..."
+          placeholder="Ϣ..."
           value={inputText}
           onChangeText={setInputText}
           multiline
           maxLength={500}
         />
         <TouchableOpacity style={[styles.sendBtn, (!inputText.trim() || loading) && styles.sendBtnDisabled]} onPress={handleSend} disabled={!inputText.trim() || loading}>
-          <Text style={styles.sendText}>{loading ? "..." : "发送"}</Text>
+          <Text style={styles.sendText}>{loading ? "..." : ""}</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -181,3 +181,4 @@ const styles = StyleSheet.create({
   empty: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 80 },
   emptyText: { fontSize: 15, color: "#999", marginTop: 12 },
 });
+

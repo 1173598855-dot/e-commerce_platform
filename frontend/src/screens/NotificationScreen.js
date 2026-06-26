@@ -1,8 +1,8 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "react-native-vector-icons";
 import { notificationApi } from "../api";
 
 export default function NotificationScreen() {
@@ -20,7 +20,7 @@ export default function NotificationScreen() {
       setNotifications(res.data?.list || []);
       setUnreadCount(res.data?.unreadCount || 0);
     } catch (err) {
-      console.error("加载通知失败:", err);
+      console.error("֪ͨʧ:", err);
     }
   };
 
@@ -90,10 +90,10 @@ export default function NotificationScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>消息通知</Text>
+        <Text style={styles.headerTitle}>Ϣ֪ͨ</Text>
         {unreadCount > 0 && (
           <TouchableOpacity onPress={handleMarkAllRead}>
-            <Text style={styles.markAllRead}>全部标为已读 ({unreadCount})</Text>
+            <Text style={styles.markAllRead}>ȫΪѶ ({unreadCount})</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -105,7 +105,7 @@ export default function NotificationScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="notifications-outline" size={48} color="#ddd" />
-            <Text style={styles.emptyText}>暂无通知</Text>
+            <Text style={styles.emptyText}>֪ͨ</Text>
           </View>
         }
       />
@@ -130,3 +130,4 @@ const styles = StyleSheet.create({
   empty: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 80 },
   emptyText: { fontSize: 15, color: "#999", marginTop: 12 },
 });
+

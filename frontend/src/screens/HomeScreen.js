@@ -1,9 +1,9 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   RefreshControl, ScrollView, TextInput
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from 'react-native-vector-icons';
 import { productApi, categoryApi } from '../api';
 
 export default function HomeScreen({ navigation }) {
@@ -22,10 +22,10 @@ export default function HomeScreen({ navigation }) {
         productApi.getHot(),
         categoryApi.getList(),
       ]);
-      setHotProducts(hotRes.data || []);
-      setCategories(catRes.data || []);
+      setHotProducts(hotRes.data.list || []);
+      setCategories(catRes.data.list || []);
     } catch (err) {
-      console.error('加载首页数据失败:', err);
+      console.error('ҳʧ:', err);
     }
   };
 
@@ -42,23 +42,23 @@ export default function HomeScreen({ navigation }) {
   };
 
   const quickNav = [
-    { name: '秒杀', icon: '⚡', screen: null },
-    { name: '优惠券', icon: '🎫', screen: null },
-    { name: '新品', icon: '✨', screen: null },
-    { name: '品牌', icon: '🏷️', screen: null },
-    { name: 'AI推荐', icon: '🤖', screen: 'Recommend' },
-    { name: 'AI客服', icon: '💬', screen: 'AiChat' }, { name: '领券', icon: '🎫', screen: 'Coupons' },
+    { name: 'ɱ', icon: '?', screen: null },
+    { name: 'Żȯ', icon: '??', screen: null },
+    { name: 'Ʒ', icon: '?', screen: null },
+    { name: 'Ʒ', icon: '???', screen: null },
+    { name: 'AIƼ', icon: '??', screen: 'Recommend' },
+    { name: 'AIͷ', icon: '??', screen: 'AiChat' }, { name: 'ȯ', icon: '??', screen: 'Coupons' },
   ];
 
   return (
     <View style={styles.container}>
-      {/* 顶部搜索栏 */}
+      {/*  */}
       <View style={styles.searchBar}>
         <View style={styles.searchInputWrap}>
           <Ionicons name="search" size={18} color="#999" />
           <TextInput
             style={styles.searchInput}
-            placeholder="搜索商品、品牌"
+            placeholder="ƷƷ"
             value={searchKeyword}
             onChangeText={setSearchKeyword}
             onSubmitEditing={handleSearch}
@@ -75,7 +75,7 @@ export default function HomeScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={() => (
           <View>
-            {/* 金刚区 */}
+            {/*  */}
             <View style={styles.quickNav}>
               {quickNav.map((item, i) => (
                 <TouchableOpacity
@@ -93,13 +93,13 @@ export default function HomeScreen({ navigation }) {
               ))}
             </View>
 
-            {/* 分类入口 */}
+            {/*  */}
             {categories.length > 0 && (
               <View style={styles.catSection}>
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>商品分类</Text>
+                  <Text style={styles.sectionTitle}>Ʒ</Text>
                   <TouchableOpacity onPress={() => navigation.navigate('Category')}>
-                    <Text style={styles.seeMore}>更多 ›</Text>
+                    <Text style={styles.seeMore}> ?</Text>
                   </TouchableOpacity>
                 </View>
                 <View style={styles.catGrid}>
@@ -109,7 +109,7 @@ export default function HomeScreen({ navigation }) {
                       style={styles.catItem}
                       onPress={() => navigation.navigate('Category')}
                     >
-                      <Text style={styles.catIcon}>{cat.icon || '📦'}</Text>
+                      <Text style={styles.catIcon}>{cat.icon || '??'}</Text>
                       <Text style={styles.catName}>{cat.name}</Text>
                     </TouchableOpacity>
                   ))}
@@ -132,18 +132,18 @@ function ProductCard({ product, onPress }) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.cardImage}>
-        <Text style={styles.imgPlaceholder}>📷</Text>
+        <Text style={styles.imgPlaceholder}>??</Text>
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle} numberOfLines={2}>{product.name}</Text>
         <View style={styles.cardPriceRow}>
-          <Text style={styles.cardPrice}>¥{product.price}</Text>
+          <Text style={styles.cardPrice}>{product.price}</Text>
           {product.original_price && (
-            <Text style={styles.cardOriginal}>¥{product.original_price}</Text>
+            <Text style={styles.cardOriginal}>{product.original_price}</Text>
           )}
         </View>
         <View style={styles.cardSales}>
-          <Text style={styles.salesText}>已售 {product.sales || 0}</Text>
+          <Text style={styles.salesText}> {product.sales || 0}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -181,3 +181,5 @@ const styles = StyleSheet.create({
   cardSales: { marginTop: 4 },
   salesText: { fontSize: 11, color: '#999' },
 });
+
+

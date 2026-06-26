@@ -1,9 +1,9 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   RefreshControl, Image
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from 'react-native-vector-icons';
 import { reviewApi } from '../api';
 
 export default function ReviewListScreen({ route }) {
@@ -29,7 +29,7 @@ export default function ReviewListScreen({ route }) {
       setTotalReviews(res.data?.totalReviews || 0);
       setRatingDist(res.data?.ratingDistribution || {});
     } catch (err) {
-      console.error('加载评价失败:', err);
+      console.error('ʧ:', err);
     }
   };
 
@@ -57,14 +57,14 @@ export default function ReviewListScreen({ route }) {
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{item.sender_name?.charAt(0) || 'U'}</Text>
           </View>
-          <Text style={styles.reviewerName}>{item.sender_name || '匿名用户'}</Text>
+          <Text style={styles.reviewerName}>{item.sender_name || 'û'}</Text>
         </View>
         <View style={styles.stars}>
           {renderStars(item.rating)}
         </View>
       </View>
       <Text style={styles.reviewContent}>{item.content}</Text>
-      {/* 评价图片 */}
+      {/* ͼƬ */}
       {item.images && (() => {
         try {
           const imgs = JSON.parse(item.images);
@@ -72,7 +72,7 @@ export default function ReviewListScreen({ route }) {
             return (
               <View style={styles.reviewImages}>
                 {imgs.map((img, i) => (
-                  <View key={i} style={styles.reviewImg}><Text style={styles.imgPlaceholder}>🖼</Text></View>
+                  <View key={i} style={styles.reviewImg}><Text style={styles.imgPlaceholder}>??</Text></View>
                 ))}
               </View>
             );
@@ -86,22 +86,22 @@ export default function ReviewListScreen({ route }) {
 
   return (
     <View style={styles.container}>
-      {/* 评分概览 */}
+      {/* ָ */}
       <View style={styles.overview}>
         <View style={styles.scoreCenter}>
           <Text style={styles.score}>{averageRating}</Text>
-          <Text style={styles.scoreLabel}>综合评分</Text>
-          <Text style={styles.scoreCount}>{totalReviews}条评价</Text>
+          <Text style={styles.scoreLabel}>ۺ</Text>
+          <Text style={styles.scoreCount}>{totalReviews}</Text>
         </View>
       </View>
 
-      {/* 筛选 */}
+      {/* ɸѡ */}
       <View style={styles.filterRow}>
         <TouchableOpacity
           style={[styles.filterBtn, !filterRating && styles.filterBtnActive]}
           onPress={() => setFilterRating(null)}
         >
-          <Text style={[styles.filterText, !filterRating && styles.filterTextActive]}>全部</Text>
+          <Text style={[styles.filterText, !filterRating && styles.filterTextActive]}>ȫ</Text>
         </TouchableOpacity>
         {[5, 4, 3, 2, 1].map(r => (
           <TouchableOpacity
@@ -109,7 +109,7 @@ export default function ReviewListScreen({ route }) {
             style={[styles.filterBtn, filterRating === r && styles.filterBtnActive]}
             onPress={() => setFilterRating(r)}
           >
-            <Text style={[styles.filterText, filterRating === r && styles.filterTextActive]}>{r}星</Text>
+            <Text style={[styles.filterText, filterRating === r && styles.filterTextActive]}>{r}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -122,7 +122,7 @@ export default function ReviewListScreen({ route }) {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="chatbubbles-outline" size={48} color="#ddd" />
-            <Text style={styles.emptyText}>暂无评价</Text>
+            <Text style={styles.emptyText}></Text>
           </View>
         }
       />
@@ -157,3 +157,4 @@ const styles = StyleSheet.create({
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 80 },
   emptyText: { fontSize: 15, color: '#999', marginTop: 12 },
 });
+

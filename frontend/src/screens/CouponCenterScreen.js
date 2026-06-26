@@ -1,24 +1,22 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Alert
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from 'react-native-vector-icons';
 import { couponApi } from '../api';
 
 export default function CouponCenterScreen() {
   const [coupons, setCoupons] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadCoupons();
-  }, []);
+  useEffect(() => { loadCoupons(); }, []);
 
   const loadCoupons = async () => {
     try {
       const res = await couponApi.getList();
       setCoupons(res.data || []);
     } catch (err) {
-      console.error('加载优惠券失败:', err);
+      console.error('load coupons error:', err);
     }
   };
 
@@ -31,40 +29,33 @@ export default function CouponCenterScreen() {
   const handleReceive = async (item) => {
     try {
       await couponApi.receive({ coupon_id: item.id });
-      Alert.alert('领取成功', item.name);
+      Alert.alert('Success', item.name);
       loadCoupons();
     } catch (err) {
-      Alert.alert('领取失败', err.message);
+      Alert.alert('Error', err.message);
     }
   };
 
   const renderCoupon = ({ item }) => {
     const displayText = item.type === 1
-      ? 满减
+      ? 'Full reduction'
       : item.type === 2
-        ? ${item.discount_amount}折
-        : 立减元;
-
+        ? String(item.discount_amount) + '% off'
+        : String(item.discount_amount) + ' off';
     return (
       <View style={styles.couponCard}>
         <View style={styles.couponLeft}>
-          <Text style={styles.couponAmount}>
-            {item.type === 2 ? '' : '¥'}
-            {item.discount_amount}
-            {item.type === 2 ? '折' : ''}
-          </Text>
+          <Text style={styles.couponAmount}>{item.discount_amount}</Text>
           <Text style={styles.couponCondition}>{displayText}</Text>
         </View>
         <View style={styles.couponRight}>
           <Text style={styles.couponName}>{item.name}</Text>
-          <Text style={styles.couponDesc}>
-            限满{item.min_order_amount}元使用
-          </Text>
+          <Text style={styles.couponDesc}>Min {item.min_order_amount} yuan</Text>
           <Text style={styles.couponDate}>
             {new Date(item.valid_start).toLocaleDateString()} ~ {new Date(item.valid_end).toLocaleDateString()}
           </Text>
           <TouchableOpacity style={styles.receiveBtn} onPress={() => handleReceive(item)}>
-            <Text style={styles.receiveBtnText}>立即领取</Text>
+            <Text style={styles.receiveBtnText}>Receive</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -81,8 +72,8 @@ export default function CouponCenterScreen() {
         contentContainerStyle={{ padding: 12 }}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="card-outline" size={48} color="#ddd" />
-            <Text style={styles.emptyText}>暂无可领取的优惠券</Text>
+            <Ionicons name='card-outline' size={48} color='#ddd' />
+            <Text style={styles.emptyText}>No coupons</Text>
           </View>
         }
       />

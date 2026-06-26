@@ -1,9 +1,9 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   RefreshControl, Alert
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from 'react-native-vector-icons';
 import { favoriteApi } from '../api';
 
 export default function FavoriteScreen({ navigation }) {
@@ -19,7 +19,7 @@ export default function FavoriteScreen({ navigation }) {
       const res = await favoriteApi.getList({ page: 1, pageSize: 100 });
       setFavorites(res.data?.list || []);
     } catch (err) {
-      console.error('加载收藏失败:', err);
+      console.error('ղʧ:', err);
     }
   };
 
@@ -34,7 +34,7 @@ export default function FavoriteScreen({ navigation }) {
       await favoriteApi.remove({ product_id: item.product_id });
       loadFavorites();
     } catch (err) {
-      Alert.alert('取消失败', err.message);
+      Alert.alert('ȡʧ', err.message);
     }
   };
 
@@ -45,13 +45,13 @@ export default function FavoriteScreen({ navigation }) {
       onLongPress={() => handleRemove(item)}
     >
       <View style={styles.itemImage}>
-        <Text style={styles.imgPlaceholder}>📷</Text>
+        <Text style={styles.imgPlaceholder}>??</Text>
       </View>
       <View style={styles.itemInfo}>
         <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
-        <Text style={styles.itemPrice}>¥{item.price}</Text>
+        <Text style={styles.itemPrice}>{item.price}</Text>
         <View style={styles.itemMeta}>
-          <Text style={styles.salesText}>已售 {item.sales || 0}</Text>
+          <Text style={styles.salesText}> {item.sales || 0}</Text>
           {item.category_name && <Text style={styles.catText}>{item.category_name}</Text>}
         </View>
       </View>
@@ -74,12 +74,12 @@ export default function FavoriteScreen({ navigation }) {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="heart-outline" size={64} color="#ddd" />
-            <Text style={styles.emptyText}>还没有收藏商品</Text>
+            <Text style={styles.emptyText}>ûղƷ</Text>
             <TouchableOpacity
               style={styles.goShopBtn}
               onPress={() => navigation.navigate('Home')}
             >
-              <Text style={styles.goShopText}>去逛逛</Text>
+              <Text style={styles.goShopText}>ȥ</Text>
             </TouchableOpacity>
           </View>
         }
@@ -105,3 +105,4 @@ const styles = StyleSheet.create({
   goShopBtn: { paddingHorizontal: 32, paddingVertical: 12, backgroundColor: '#ff6b35', borderRadius: 20 },
   goShopText: { color: '#fff', fontSize: 15, fontWeight: '500' },
 });
+

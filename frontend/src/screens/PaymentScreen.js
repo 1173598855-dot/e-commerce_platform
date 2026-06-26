@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { paymentApi } from '../api';
 
@@ -19,7 +19,7 @@ export default function PaymentScreen({ route, navigation }) {
       const res = await paymentApi.mockPayment({ orderId, paymentMethod: selectedMethod });
       Alert.alert(
         '支付成功',
-        `交易号: ${res.data.transactionId}\n金额: ¥${res.data.amount}`,
+        `交易号: ${res.data.transactionId}\n金额: Y${res.data.amount}`,
         [{ text: '完成', onPress: () => navigation.goBack() }]
       );
     } catch (err) {
@@ -33,7 +33,7 @@ export default function PaymentScreen({ route, navigation }) {
     <ScrollView style={styles.container}>
       <View style={styles.amountCard}>
         <Text style={styles.amountLabel}>支付金额</Text>
-        <Text style={styles.amountValue}>¥{amount}</Text>
+        <Text style={styles.amountValue}>Y{amount}</Text>
       </View>
 
       <View style={styles.methodCard}>
@@ -69,7 +69,7 @@ export default function PaymentScreen({ route, navigation }) {
           disabled={paying}
         >
           <Text style={styles.payText}>
-            {paying ? '支付处理中...' : `确认支付 ¥${amount}`}
+            {paying ? '支付处理中...' : `确认支付 Y${amount}`}
           </Text>
         </TouchableOpacity>
       </View>

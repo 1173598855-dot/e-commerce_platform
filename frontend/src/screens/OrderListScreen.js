@@ -1,16 +1,16 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from 'react-native-vector-icons';
 import { orderApi } from '../api';
 
 const STATUS_MAP = {
-  pending: { label: '待付款', color: '#ff9800', icon: 'time-outline' },
-  paid: { label: '待发货', color: '#2196f3', icon: 'cube-outline' },
-  shipped: { label: '待收货', color: '#9c27b0', icon: 'truck-outline' },
-  completed: { label: '已完成', color: '#4caf50', icon: 'checkmark-circle' },
-  cancelled: { label: '已取消', color: '#999', icon: 'close-circle' },
+  pending: { label: '', color: '#ff9800', icon: 'time-outline' },
+  paid: { label: '', color: '#2196f3', icon: 'cube-outline' },
+  shipped: { label: 'ջ', color: '#9c27b0', icon: 'truck-outline' },
+  completed: { label: '', color: '#4caf50', icon: 'checkmark-circle' },
+  cancelled: { label: 'ȡ', color: '#999', icon: 'close-circle' },
 };
 
 export default function OrderListScreen({ route, navigation }) {
@@ -20,11 +20,11 @@ export default function OrderListScreen({ route, navigation }) {
   const [refreshing, setRefreshing] = useState(false);
 
   const tabs = [
-    { key: 'all', label: '全部' },
-    { key: 'pending', label: '待付款' },
-    { key: 'paid', label: '待发货' },
-    { key: 'shipped', label: '待收货' },
-    { key: 'completed', label: '已完成' },
+    { key: 'all', label: 'ȫ' },
+    { key: 'pending', label: '' },
+    { key: 'paid', label: '' },
+    { key: 'shipped', label: 'ջ' },
+    { key: 'completed', label: '' },
   ];
 
   useEffect(() => {
@@ -38,7 +38,7 @@ export default function OrderListScreen({ route, navigation }) {
       const res = await orderApi.getOrders(params);
       setOrders(res.data?.list || []);
     } catch (err) {
-      console.error('加载订单失败:', err);
+      console.error('ضʧ:', err);
     }
   };
 
@@ -68,7 +68,7 @@ export default function OrderListScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Tab切换 */}
+      {/* Tabл */}
       <View style={styles.tabBar}>
         {tabs.map(tab => (
           <TouchableOpacity
@@ -107,36 +107,36 @@ export default function OrderListScreen({ route, navigation }) {
                   onPress={() => navigation.navigate('ProductDetail', { id: orderItem.product_id })}
                 >
                   <View style={styles.orderItemImg}>
-                    <Text style={styles.imgPlaceholder}>📷</Text>
+                    <Text style={styles.imgPlaceholder}>??</Text>
                   </View>
                   <View style={styles.orderItemInfo}>
                     <Text style={styles.orderItemName} numberOfLines={2}>{orderItem.product_name}</Text>
-                    <Text style={styles.orderItemPrice}>¥{orderItem.price} × {orderItem.quantity}</Text>
+                    <Text style={styles.orderItemPrice}>{orderItem.price}  {orderItem.quantity}</Text>
                   </View>
                 </TouchableOpacity>
               ))}
 
               <View style={styles.orderFooter}>
                 <Text style={styles.totalText}>
-                  共 {item.items?.reduce((s, it) => s + it.quantity, 0) || 0} 件商品
+                   {item.items?.reduce((s, it) => s + it.quantity, 0) || 0} Ʒ
                 </Text>
                 <Text style={styles.totalAmount}>
-                  合计：<Text style={styles.amount}>¥{item.total_amount}</Text>
+                  ϼƣ<Text style={styles.amount}>{item.total_amount}</Text>
                 </Text>
                 <View style={styles.actionRow}>
                   {item.status === 'pending' && (
                     <>
                       <TouchableOpacity style={styles.cancelBtn} onPress={() => handleCancel(item.id)}>
-                        <Text style={styles.cancelText}>取消订单</Text>
+                        <Text style={styles.cancelText}>ȡ</Text>
                       </TouchableOpacity>
                       <TouchableOpacity style={styles.payBtn} onPress={() => navigation.navigate('Payment', { orderId: item.id, amount: item.total_amount })}>
-                        <Text style={styles.payText}>去支付</Text>
+                        <Text style={styles.payText}>ȥ֧</Text>
                       </TouchableOpacity>
                     </>
                   )}
                   {item.status === 'shipped' && (
                     <TouchableOpacity style={styles.confirmBtn} onPress={() => handleConfirm(item.id)}>
-                      <Text style={styles.confirmText}>确认收货</Text>
+                      <Text style={styles.confirmText}>ȷջ</Text>
                     </TouchableOpacity>
                   )}
                   {item.status === 'completed' && item.items?.[0] && (
@@ -144,11 +144,11 @@ export default function OrderListScreen({ route, navigation }) {
                       style={styles.reviewBtn}
                       onPress={() => navigation.navigate('Review', { orderId: item.id, product: item.items[0] })}
                     >
-                      <Text style={styles.reviewText}>写评价</Text>
+                      <Text style={styles.reviewText}>д</Text>
                     </TouchableOpacity>
                   )}
                   {item.status === 'cancelled' && (
-                    <Text style={styles.doneText}>订单已取消</Text>
+                    <Text style={styles.doneText}>ȡ</Text>
                   )}
                 </View>
               </View>
@@ -158,7 +158,7 @@ export default function OrderListScreen({ route, navigation }) {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="receipt-outline" size={64} color="#ddd" />
-            <Text style={styles.emptyText}>暂无订单</Text>
+            <Text style={styles.emptyText}>޶</Text>
           </View>
         }
       />
@@ -201,3 +201,4 @@ const styles = StyleSheet.create({
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 80 },
   emptyText: { fontSize: 15, color: '#999', marginTop: 16 },
 });
+

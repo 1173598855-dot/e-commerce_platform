@@ -1,8 +1,8 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "react-native-vector-icons";
 import { productApi, searchApi } from "../api";
 
 export default function SearchScreen({ route, navigation }) {
@@ -42,10 +42,10 @@ export default function SearchScreen({ route, navigation }) {
     try {
       const res = await productApi.search(kw.trim());
       setResults(res.data?.list || []);
-      // 保存搜索历史
+      // ʷ
       searchApi.saveHistory({ keyword: kw.trim() }).catch(() => {});
     } catch (err) {
-      console.error("搜索失败:", err);
+      console.error("ʧ:", err);
       setResults([]);
     } finally {
       setLoading(false);
@@ -72,13 +72,13 @@ export default function SearchScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* 搜索栏 */}
+      {/*  */}
       <View style={styles.searchBar}>
         <View style={styles.searchInputWrap}>
           <Ionicons name="search" size={18} color="#999" />
           <TextInput
             style={styles.searchInput}
-            placeholder="搜索商品、品牌"
+            placeholder="ƷƷ"
             value={keyword}
             onChangeText={handleInputChange}
             onSubmitEditing={handleSearch}
@@ -86,14 +86,14 @@ export default function SearchScreen({ route, navigation }) {
           />
         </View>
         <TouchableOpacity style={styles.searchBtn} onPress={handleSearch}>
-          <Text style={styles.searchBtnText}>搜索</Text>
+          <Text style={styles.searchBtnText}></Text>
         </TouchableOpacity>
       </View>
 
       {loading ? (
         <View style={styles.loading}><ActivityIndicator size="large" color="#ff6b35" /></View>
       ) : showSuggestions && suggestions.length > 0 ? (
-        /* 联想词 */
+        /*  */
         <View style={styles.suggestionCard}>
           {suggestions.map((item, i) => (
             <TouchableOpacity
@@ -107,21 +107,21 @@ export default function SearchScreen({ route, navigation }) {
           ))}
         </View>
       ) : hasSearched ? (
-        /* 搜索结果 */
+        /*  */
         <FlatList
           data={results}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.resultItem} onPress={() => navigation.navigate("ProductDetail", { id: item.id })}>
               <View style={styles.resultImg}>
-                <Text style={styles.imgPlaceholder}>📷</Text>
+                <Text style={styles.imgPlaceholder}>??</Text>
               </View>
               <View style={styles.resultInfo}>
                 <Text style={styles.resultName} numberOfLines={2}>{item.name}</Text>
                 <Text style={styles.resultDesc} numberOfLines={1}>{item.description}</Text>
                 <View style={styles.resultMeta}>
-                  <Text style={styles.resultPrice}>¥{item.price}</Text>
-                  <Text style={styles.resultSales}>已售 {item.sales || 0}</Text>
+                  <Text style={styles.resultPrice}>{item.price}</Text>
+                  <Text style={styles.resultSales}> {item.sales || 0}</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -129,14 +129,14 @@ export default function SearchScreen({ route, navigation }) {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="search-outline" size={48} color="#ddd" />
-              <Text style={styles.emptyText}>没有找到相关商品</Text>
+              <Text style={styles.emptyText}>ûҵƷ</Text>
             </View>
           }
         />
       ) : (
-        /* 热搜榜 */
+        /* Ѱ */
         <View style={styles.hotSection}>
-          <Text style={styles.sectionTitle}>🔥 热门搜索</Text>
+          <Text style={styles.sectionTitle}>?? </Text>
           <View style={styles.hotGrid}>
             {hotKeywords.map((kw, i) => (
               <TouchableOpacity
@@ -182,3 +182,4 @@ const styles = StyleSheet.create({
   empty: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 80 },
   emptyText: { fontSize: 14, color: "#999", marginTop: 16 },
 });
+

@@ -1,9 +1,9 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, Alert, RefreshControl,
   FlatList
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "react-native-vector-icons";
 import { authApi } from "../api";
 import { authStore } from "../store/authStore";
 
@@ -21,7 +21,7 @@ export default function ProfileScreen({ navigation }) {
       setUser(res.data);
       global.userInfo = res.data;
     } catch (err) {
-      console.error("加载用户信息失败:", err);
+      console.error("ûϢʧ:", err);
     }
   };
 
@@ -32,10 +32,10 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const handleLogout = () => {
-    Alert.alert("退出登录", "确定要退出登录吗？", [
-      { text: "取消", style: "cancel" },
+    Alert.alert("˳¼", "ȷҪ˳¼", [
+      { text: "ȡ", style: "cancel" },
       {
-        text: "确定",
+        text: "ȷ",
         style: "destructive",
         onPress: () => {
           global.token = null;
@@ -48,26 +48,26 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const orderTabs = [
-    { name: "待付款", key: "pending", icon: "💰" },
-    { name: "待发货", key: "paid", icon: "📦" },
-    { name: "待收货", key: "shipped", icon: "🚚" },
-    { name: "已完成", key: "completed", icon: "✅" },
-    { name: "已取消", key: "cancelled", icon: "❌" },
+    { name: "", key: "pending", icon: "??" },
+    { name: "", key: "paid", icon: "??" },
+    { name: "ջ", key: "shipped", icon: "??" },
+    { name: "", key: "completed", icon: "?" },
+    { name: "ȡ", key: "cancelled", icon: "?" },
   ];
 
   const myServices = [
-    { name: "我的收藏", icon: "❤️", screen: "Favorites" },
-    { name: "收货地址", icon: "📍", screen: "Addresses" },
-    { name: "我的优惠券", icon: "🎫", screen: "MyCoupons" },
-    { name: "积分中心", icon: "⭐", screen: "Points" },
-    { name: "AI客服", icon: "🤖", screen: "AiChat" },
-    { name: "消息通知", icon: "🔔", screen: "Notifications" },
-    { name: "IM聊天", icon: "💬", screen: "ChatRoom" },
+    { name: "ҵղ", icon: "??", screen: "Favorites" },
+    { name: "ջַ", icon: "??", screen: "Addresses" },
+    { name: "ҵŻȯ", icon: "??", screen: "MyCoupons" },
+    { name: "", icon: "?", screen: "Points" },
+    { name: "AIͷ", icon: "??", screen: "AiChat" },
+    { name: "Ϣ֪ͨ", icon: "??", screen: "Notifications" },
+    { name: "IM", icon: "??", screen: "ChatRoom" },
   ];
 
   const moreMenus = [
-    { name: "数据看板", icon: "📊", screen: "DataDashboard" },
-    { name: "关于我们", icon: "ℹ️", screen: null },
+    { name: "ݿ", icon: "??", screen: "DataDashboard" },
+    { name: "", icon: "??", screen: null },
   ];
 
   return (
@@ -79,42 +79,42 @@ export default function ProfileScreen({ navigation }) {
         <View>
           <View style={styles.profileCard}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{user?.nickname?.charAt(0) || "👤"}</Text>
+              <Text style={styles.avatarText}>{user?.nickname?.charAt(0) || "??"}</Text>
             </View>
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>{user?.nickname || "游客"}</Text>
-              <Text style={styles.userPhone}>{user?.phone || "请登录"}</Text>
+              <Text style={styles.userName}>{user?.nickname || "ο"}</Text>
+              <Text style={styles.userPhone}>{user?.phone || "¼"}</Text>
             </View>
             <TouchableOpacity style={styles.editBtn} onPress={() => navigation.navigate("EditProfile")}>
               <Ionicons name="pencil" size={14} color="#ff6b35" />
-              <Text style={styles.editBtnText}>编辑</Text>
+              <Text style={styles.editBtnText}>༭</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.quickCard}>
             <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate("Coupons")}>
-              <Text style={styles.quickIcon}>🎫</Text>
-              <Text style={styles.quickLabel}>领券中心</Text>
+              <Text style={styles.quickIcon}>??</Text>
+              <Text style={styles.quickLabel}>ȯ</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate("Points")}>
-              <Text style={styles.quickIcon}>⭐</Text>
-              <Text style={styles.quickLabel}>积分</Text>
+              <Text style={styles.quickIcon}>?</Text>
+              <Text style={styles.quickLabel}></Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate("AiChat")}>
-              <Text style={styles.quickIcon}>🤖</Text>
+              <Text style={styles.quickIcon}>??</Text>
               <Text style={styles.quickLabel}>AI</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate("Recommend")}>
-              <Text style={styles.quickIcon}>🎯</Text>
-              <Text style={styles.quickLabel}>推荐</Text>
+              <Text style={styles.quickIcon}>??</Text>
+              <Text style={styles.quickLabel}>Ƽ</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.orderCard}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>我的订单</Text>
+              <Text style={styles.cardTitle}>ҵĶ</Text>
               <TouchableOpacity onPress={() => navigation.navigate("OrderList")}>
-                <Text style={styles.seeMore}>全部订单 ›</Text>
+                <Text style={styles.seeMore}>ȫ ?</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.orderTabList}>
@@ -128,7 +128,7 @@ export default function ProfileScreen({ navigation }) {
           </View>
 
           <View style={styles.menuCard}>
-            <Text style={styles.cardTitle}>我的服务</Text>
+            <Text style={styles.cardTitle}>ҵķ</Text>
             {myServices.map((item, i) => (
               <TouchableOpacity key={i} style={styles.menuItem} onPress={() => { if (item.screen) navigation.navigate(item.screen); }}>
                 <Text style={styles.menuIcon}>{item.icon}</Text>
@@ -139,7 +139,7 @@ export default function ProfileScreen({ navigation }) {
           </View>
 
           <View style={styles.menuCard}>
-            <Text style={styles.cardTitle}>更多</Text>
+            <Text style={styles.cardTitle}></Text>
             {moreMenus.map((item, i) => (
               <TouchableOpacity key={i} style={styles.menuItem} onPress={() => { if (item.screen) navigation.navigate(item.screen); }}>
                 <Text style={styles.menuIcon}>{item.icon}</Text>
@@ -154,9 +154,9 @@ export default function ProfileScreen({ navigation }) {
       ListFooterComponent={() => (
         <View style={styles.logoutSection}>
           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-            <Text style={styles.logoutText}>退出登录</Text>
+            <Text style={styles.logoutText}>˳¼</Text>
           </TouchableOpacity>
-          <Text style={styles.version}>好物商城 v1.0.0</Text>
+          <Text style={styles.version}>̳ v1.0.0</Text>
         </View>
       )}
       contentContainerStyle={{ paddingBottom: 40 }}
@@ -194,4 +194,5 @@ const styles = StyleSheet.create({
   logoutText: { color: "#ff4444", fontSize: 15 },
   version: { textAlign: "center", fontSize: 12, color: "#ccc", marginTop: 16 },
 });
+
 

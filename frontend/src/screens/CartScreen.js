@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from 'react-native-vector-icons';
 import { cartApi } from '../api';
 
 export default function CartScreen({ navigation }) {
@@ -18,7 +18,7 @@ export default function CartScreen({ navigation }) {
       setCartItems(res.data?.items || []);
       setTotal(res.data?.total || '0.00');
     } catch (err) {
-      console.error('加载购物车失败:', err);
+      console.error('عﳵʧ:', err);
     }
   };
 
@@ -31,10 +31,10 @@ export default function CartScreen({ navigation }) {
   const handleRemove = async (id) => {
     try {
       await cartApi.removeItem(id);
-      Alert.alert('提示', '已移除');
+      Alert.alert('ʾ', 'Ƴ');
       loadCart();
     } catch (err) {
-      Alert.alert('移除失败', err.message);
+      Alert.alert('Ƴʧ', err.message);
     }
   };
 
@@ -44,13 +44,13 @@ export default function CartScreen({ navigation }) {
       await cartApi.updateQuantity(id, qty);
       loadCart();
     } catch (err) {
-      Alert.alert('更新失败', err.message);
+      Alert.alert('ʧ', err.message);
     }
   };
 
   const handleCheckout = () => {
     if (cartItems.length === 0) {
-      Alert.alert('提示', '购物车是空的');
+      Alert.alert('ʾ', 'ﳵǿյ');
       return;
     }
     navigation.navigate('OrderCreate', { items: cartItems });
@@ -64,7 +64,7 @@ export default function CartScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={() => (
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>购物车 ({cartItems.length})</Text>
+            <Text style={styles.headerTitle}>ﳵ ({cartItems.length})</Text>
             {cartItems.length > 0 && (
               <TouchableOpacity onPress={loadCart}>
                 <Ionicons name="refresh-outline" size={20} color="#ff6b35" />
@@ -75,11 +75,11 @@ export default function CartScreen({ navigation }) {
         renderItem={({ item }) => (
           <View style={styles.cartItem}>
             <View style={styles.itemImage}>
-              <Text style={styles.imgPlaceholder}>📷</Text>
+              <Text style={styles.imgPlaceholder}>??</Text>
             </View>
             <View style={styles.itemInfo}>
               <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
-              <Text style={styles.itemPrice}>¥{item.price}</Text>
+              <Text style={styles.itemPrice}>{item.price}</Text>
               <View style={styles.qtyRow}>
                 <TouchableOpacity
                   style={styles.qtyBtn}
@@ -104,24 +104,24 @@ export default function CartScreen({ navigation }) {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="cart-outline" size={64} color="#ddd" />
-            <Text style={styles.emptyText}>购物车空空如也</Text>
+            <Text style={styles.emptyText}>ﳵտҲ</Text>
             <TouchableOpacity style={styles.goShopBtn} onPress={() => navigation.navigate('Home')}>
-              <Text style={styles.goShopText}>去逛逛</Text>
+              <Text style={styles.goShopText}>ȥ</Text>
             </TouchableOpacity>
           </View>
         }
         ListFooterComponent={() => (
           <View style={styles.footer}>
             <View style={styles.totalRow}>
-              <Text style={styles.totalText}>合计：</Text>
-              <Text style={styles.totalAmount}>¥{total}</Text>
+              <Text style={styles.totalText}>ϼƣ</Text>
+              <Text style={styles.totalAmount}>{total}</Text>
             </View>
             <TouchableOpacity
               style={[styles.checkoutBtn, cartItems.length === 0 && styles.checkoutBtnDisabled]}
               onPress={handleCheckout}
               disabled={cartItems.length === 0}
             >
-              <Text style={styles.checkoutText}>去结算 ({cartItems.length})</Text>
+              <Text style={styles.checkoutText}>ȥ ({cartItems.length})</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -157,3 +157,4 @@ const styles = StyleSheet.create({
   goShopBtn: { paddingHorizontal: 32, paddingVertical: 12, backgroundColor: '#ff6b35', borderRadius: 20 },
   goShopText: { color: '#fff', fontSize: 15, fontWeight: '500' },
 });
+
