@@ -1,4 +1,4 @@
-﻿const api = require('./request');
+﻿import api from './request';
 
 // ========== 认证相关 ==========
 export const authApi = {
@@ -10,6 +10,7 @@ export const authApi = {
   qqLogin: (data) => api.post('/auth/qq-login', data),
   getProfile: () => api.get('/auth/profile'),
   updateProfile: (data) => api.put('/auth/profile', data),
+  refresh: (data) => api.post('/auth/refresh', data),
 };
 
 // ========== 商品相关 ==========
@@ -144,3 +145,6 @@ export const dataApi = {
   getProductRanking: (limit) => api.get('/data/product-ranking', { params: { limit } }),
   getUserActivity: (days) => api.get('/data/user-activity', { params: { days } }),
 };
+
+// ========== 默认导出 ==========
+export { default as api } from './request';

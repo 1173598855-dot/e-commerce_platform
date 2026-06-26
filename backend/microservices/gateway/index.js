@@ -1,10 +1,49 @@
-const express = require("express");
+﻿const express = require("express");
 const http = require("http");
 const jwt = require("jsonwebtoken");
+const helmet = require("helmet");
+const cors = require("cors");
+const { v4: uuidv4 } = require("uuid");
 require("dotenv").config();
 
 const app = express();
+
+// ==================== 安全与基础中间件 ====================
+app.use(helmet());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : "*",
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Request-Id"],
+}));
 app.use(express.json());
+
+// ==================== 请求ID ====================
+app.use((req, res, next) => {
+  const requestId = req.headers["x-request-id"] || uuidv4();
+  req.requestId = requestId;
+  res.setHeader("X-Request-Id", requestId);
+  next();
+});
+
+// ==================== 统一响应包装 ====================
+function respondSuccess(res, statusCode, data, message) {
+  return res.status(statusCode).json({
+    success: true,
+    code: "OK",
+    message: message || "ok",
+    requestId: res.getHeader("X-Request-Id"),
+    data,
+  });
+}
+
+function respondError(res, statusCode, code, message) {
+  return res.status(statusCode).json({
+    success: false,
+    code: code || "ERROR",
+    message: message || "请求处理失败",
+    requestId: res.getHeader("X-Request-Id"),
+  });
+}
 
 const JWT_SECRET = process.env.JWT_SECRET || "ecommerce_jwt_secret_key_2024";
 
@@ -13,7 +52,7 @@ app.use((req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
     const duration = Date.now() - start;
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${duration}ms)`);
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${duration}ms) [requestId=${req.requestId}]`);
   });
   next();
 });
@@ -33,7 +72,7 @@ function rateLimiter(req, res, next) {
   res.setHeader("X-RateLimit-Limit", RATE_LIMIT_MAX);
   res.setHeader("X-RateLimit-Remaining", Math.max(0, RATE_LIMIT_MAX - timestamps.length));
   if (timestamps.length > RATE_LIMIT_MAX) {
-    return res.status(429).json({ success: false, message: "请求过于频繁，请稍后再试" });
+    return respondError(res, 429, "RATE_LIMITED", "请求过于频繁，请稍后再试");
   }
   next();
 }
@@ -52,13 +91,13 @@ setInterval(() => {
 function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
-  if (!token) { return res.status(401).json({ success: false, message: "请先登录" }); }
+  if (!token) { return respondError(res, 401, "UNAUTHORIZED", "请先登录"); }
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
     next();
   } catch (err) {
-    return res.status(401).json({ success: false, message: "Token无效或已过期" });
+    return respondError(res, 401, "TOKEN_INVALID", "Token无效或已过期");
   }
 }
 
@@ -72,9 +111,8 @@ const SERVICES = {
   auth:    { host: process.env.AUTH_SERVICE_HOST || "auth-service", port: parseInt(process.env.AUTH_SERVICE_PORT) || 4006 },
 };
 
-// ==================== 反向代理（v3: 从 req.body 重建） ====================
+// ==================== 反向代理 ====================
 function proxyRequest(req, res, targetHost, targetPort) {
-  // express.json() 已消费请求流，用 req.body 重建 body
   const body = req.body ? JSON.stringify(req.body) : "";
 
   console.log(`[PROXY] ${req.method} ${req.originalUrl} -> ${targetHost}:${targetPort}${req.url}`);
@@ -88,6 +126,7 @@ function proxyRequest(req, res, targetHost, targetPort) {
   forwardHeaders["host"] = targetHost + ":" + targetPort;
   forwardHeaders["x-forwarded-for"] = req.ip || req.connection.remoteAddress;
   forwardHeaders["content-type"] = "application/json";
+  forwardHeaders["x-request-id"] = req.requestId;
   if (body.length > 0) {
     forwardHeaders["content-length"] = Buffer.byteLength(body);
   } else {
@@ -104,29 +143,83 @@ function proxyRequest(req, res, targetHost, targetPort) {
   };
 
   const proxyReq = http.request(options, (proxyRes) => {
-    res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    const headers = { ...proxyRes.headers, "x-request-id": req.requestId };
+    res.writeHead(proxyRes.statusCode, headers);
     proxyRes.pipe(res);
   });
 
   proxyReq.on("error", (err) => {
     console.error(`[PROXY ERROR] ${targetHost}:${targetPort} -> ${err.message}`);
-    if (!res.headersSent) { res.status(502).json({ success: false, message: "服务暂时不可用: " + err.message }); }
+    if (!res.headersSent) {
+      respondError(res, 502, "SERVICE_UNAVAILABLE", "服务暂时不可用: " + err.message);
+    }
   });
 
   proxyReq.on("timeout", () => {
     proxyReq.destroy();
-    if (!res.headersSent) { res.status(504).json({ success: false, message: "请求超时" }); }
+    if (!res.headersSent) {
+      respondError(res, 504, "GATEWAY_TIMEOUT", "请求超时");
+    }
   });
 
   if (body.length > 0) { proxyReq.write(body); }
   proxyReq.end();
 }
 
+// ==================== 统一转发函数 ====================
+function forwardViaV1(prefix, ...middlewares) {
+  const handlers = middlewares.length > 0 ? middlewares : [];
+  const svc = routeServiceMap[prefix];
+  
+  // 原始路径 /api/*
+  app.use(prefix, ...handlers, (req, res) => {
+    if (!svc) return respondError(res, 404, "ROUTE_NOT_FOUND", "接口不存在");
+    proxyRequest(req, res, svc.host, svc.port);
+  });
+  
+  // v1 前缀 /api/v1/*
+  const v1Prefix = "/api/v1" + prefix.replace("/api", "");
+  app.use(v1Prefix, ...handlers, (req, res) => {
+    if (!svc) return respondError(res, 404, "ROUTE_NOT_FOUND", "接口不存在");
+    proxyRequest(req, res, svc.host, svc.port);
+  });
+}
+
+const routeServiceMap = {
+  "/api/auth": SERVICES.auth,
+  "/api/products": SERVICES.product,
+  "/api/categories": SERVICES.product,
+  "/api/search": SERVICES.search,
+  "/api/videos": SERVICES.product,
+  "/api/user": SERVICES.user,
+  "/api/orders": SERVICES.order,
+  "/api/payments": SERVICES.order,
+  "/api/addresses": SERVICES.user,
+  "/api/reviews": SERVICES.product,
+  "/api/favorites": SERVICES.user,
+  "/api/skus": SERVICES.product,
+  "/api/coupons": SERVICES.user,
+  "/api/points": SERVICES.user,
+  "/api/notifications": SERVICES.mq,
+  "/api/chat": SERVICES.mq,
+  "/api/ai": SERVICES.product,
+  "/api/data": SERVICES.product,
+  "/api/merchants": SERVICES.user,
+  "/api/logistics": SERVICES.order,
+  "/api/upload": SERVICES.product,
+};
+
 // ==================== 路由规则 ====================
 
-app.use("/api/auth", (req, res) => proxyRequest(req, res, SERVICES.auth.host, SERVICES.auth.port));
+// 公开路由
+forwardViaV1("/api/auth");
+forwardViaV1("/api/products");
+forwardViaV1("/api/categories");
+forwardViaV1("/api/search");
+forwardViaV1("/api/videos");
 
-app.use("/api/health", async (req, res) => {
+// 健康检查（单独处理）
+app.use(["/api/health", "/api/v1/health"], async (req, res) => {
   const serviceStatus = {};
   const checks = Object.entries(SERVICES).map(([name, svc]) => {
     return new Promise((resolve) => {
@@ -141,45 +234,47 @@ app.use("/api/health", async (req, res) => {
   });
   await Promise.all(checks);
   const allHealthy = Object.values(serviceStatus).every((s) => s === "healthy");
-  res.status(allHealthy ? 200 : 503).json({
-    success: allHealthy,
-    message: allHealthy ? "所有服务正常" : "部分服务异常",
-    data: { gateway: "healthy", services: serviceStatus, timestamp: new Date().toISOString() },
-  });
+  const payload = { gateway: "healthy", services: serviceStatus, timestamp: new Date().toISOString() };
+  if (allHealthy) {
+    respondSuccess(res, 200, payload, "所有服务正常");
+  } else {
+    respondError(res, 503, "SERVICE_DEGRADED", "部分服务异常");
+  }
 });
 
-app.use("/api/products", (req, res) => proxyRequest(req, res, SERVICES.product.host, SERVICES.product.port));
-app.use("/api/categories", (req, res) => proxyRequest(req, res, SERVICES.product.host, SERVICES.product.port));
-app.use("/api/search", (req, res) => proxyRequest(req, res, SERVICES.search.host, SERVICES.search.port));
-app.use("/api/videos", (req, res) => proxyRequest(req, res, SERVICES.product.host, SERVICES.product.port));
-
+// 需要鉴权的路由
 const authRoutesConfig = [
-  { route: "/api/user", svc: SERVICES.user },
-  { route: "/api/orders", svc: SERVICES.order },
-  { route: "/api/payments", svc: SERVICES.order },
-  { route: "/api/addresses", svc: SERVICES.user },
-  { route: "/api/reviews", svc: SERVICES.product },
-  { route: "/api/favorites", svc: SERVICES.user },
-  { route: "/api/skus", svc: SERVICES.product },
-  { route: "/api/coupons", svc: SERVICES.user },
-  { route: "/api/points", svc: SERVICES.user },
-  { route: "/api/notifications", svc: SERVICES.mq },
-  { route: "/api/chat", svc: SERVICES.mq },
-  { route: "/api/ai", svc: SERVICES.product },
-  { route: "/api/data", svc: SERVICES.product },
-  { route: "/api/merchants", svc: SERVICES.user },
-  { route: "/api/logistics", svc: SERVICES.order },
-  { route: "/api/upload", svc: SERVICES.product },
+  "/api/user",
+  "/api/orders",
+  "/api/payments",
+  "/api/addresses",
+  "/api/reviews",
+  "/api/favorites",
+  "/api/skus",
+  "/api/coupons",
+  "/api/points",
+  "/api/notifications",
+  "/api/chat",
+  "/api/ai",
+  "/api/data",
+  "/api/merchants",
+  "/api/logistics",
+  "/api/upload",
 ];
 
-authRoutesConfig.forEach(({ route, svc }) => {
-  app.use(route, authenticateToken, (req, res) => {
-    proxyRequest(req, res, svc.host, svc.port);
-  });
+authRoutesConfig.forEach((route) => {
+  forwardViaV1(route, authenticateToken);
 });
 
+// 404 兜底
 app.use((req, res) => {
-  res.status(404).json({ success: false, message: "接口不存在: " + req.originalUrl });
+  respondError(res, 404, "ROUTE_NOT_FOUND", "接口不存在: " + req.originalUrl);
+});
+
+// 全局错误处理
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  respondError(res, err.status || 500, "INTERNAL_ERROR", err.message || "服务器内部错误");
 });
 
 const PORT = process.env.GATEWAY_PORT || 4000;

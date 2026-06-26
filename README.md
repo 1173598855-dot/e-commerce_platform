@@ -1,288 +1,227 @@
-# 仿京东淘宝网全栈电商平台
+﻿# 仿京东淘宝网全栈电商平台
 
-一个完整的全栈电商微服务项目，采用 React Native 前端 + Node.js 微服务后端 + MySQL + Redis 架构，通过 Docker Compose 编排部署。
+基于 React Native + Node.js + MySQL + Redis + Docker 的全栈电商系统，采用微服务架构。
 
 ## 技术栈
 
-- **前端**: React Native (iOS/Android)
-- **后端**: Node.js + Express (微服务架构)
-- **数据库**: MySQL 8.0
-- **缓存**: Redis 7
-- **消息队列**: Redis Pub/Sub
-- **部署**: Docker + Docker Compose
-- **网关**: 自研 API Gateway (路由转发 + JWT鉴权 + 限流)
+| 层级 | 技术 |
+|------|------|
+| 移动端 | React Native 0.73 + React Navigation |
+| API 网关 | Express + Helmet + CORS + JWT + 限流 |
+| 后端微服务 | Express + MySQL + Redis |
+| 基础设施 | Docker Compose + Nginx + MySQL 8.0 + Redis 7 |
 
-## 微服务架构
-
-### 服务列表
-
-| 服务名称 | 端口 | 描述 |
-|---------|------|------|
-| API Gateway | 4000 | 统一入口，路由转发、JWT鉴权、限流 |
-| Auth Service | 4006 | 认证中心：注册、登录、JWT签发 |
-| User Service | 4001 | 用户信息、地址、收藏、优惠券、积分 |
-| Product Service | 4002 | 商品管理、分类、SKU、评价 |
-| Order Service | 4003 | 订单创建、支付、状态管理 |
-| MQ Service | 4004 | 消息队列、通知、IM聊天 |
-| Search Service | 4005 | 商品搜索、热搜、搜索历史 |
-| MySQL | 3306 | 数据存储 |
-| Redis | 6379 | 缓存与消息队列 |
-| Nginx | 8080 | 反向代理（可选） |
-
-### 架构图
+## 系统架构
 
 ```
-┌──────────────────────────────────────────────────┐
-│                    客户端                         │
-│          React Native / 浏览器                    │
-└────────────────────┬─────────────────────────────┘
-                     │
-                     ▼
-┌──────────────────────────────────────────────────┐
-│              API Gateway (:4000)                  │
-│    JWT鉴权 │ 限流(100次/分钟) │ 统一日志 │ 路由   │
-└──┬──────┬──────┬──────┬──────┬──────┬────────────┘
-   │      │      │      │      │      │
-   ▼      ▼      ▼      ▼      ▼      ▼
-┌─────┐┌─────┐┌─────┐┌─────┐┌─────┐┌─────┐
-│Auth ││User ││Prod ││Order││ MQ  ││Search│
-│:4006││:4001││:4002││:4003││:4004││:4005│
-└──┬──┘└──┬──┘└──┬──┘└──┬──┘└──┬──┘└──┬──┘
-   │      │      │      │      │      │
-   └──────┴──────┴──┬───┴──────┴──────┘
-                    ▼
-        ┌──────────────────────┐
-        │  MySQL + Redis       │
-        │  (数据存储与缓存)     │
-        └──────────────────────┘
+Client (React Native App)
+  → Nginx (HTTPS / 443)
+    → API Gateway (4000)
+      → auth-service    (4006)  认证中心
+      → user-service    (4001)  用户服务
+      → product-service (4002)  商品服务
+      → order-service   (4003)  订单服务
+      → mq-service      (4004)  消息服务
+      → search-service  (4005)  搜索服务
+    → MySQL (3306)
+    → Redis (6379)
 ```
+
+## 功能清单
+
+### 用户模块
+- 手机号注册 / 密码登录 / 验证码登录
+- 微信小程序登录（code → openid/unionid → JWT）
+- QQ 登录
+- 个人信息管理 / 收货地址管理
+- Token 自动刷新 / 被顶号检测
+
+### 商品模块
+- 商品列表 / 详情 / 分类浏览
+- SKU 规格选择
+- 商品搜索 / 热搜词 / 搜索历史
+- 商品评价 / 评分
+
+### 订单模块
+- 购物车管理
+- 下单 / 支付（模拟）/ 取消 / 确认收货
+- 物流追踪
+
+### 营销模块
+- 优惠券领取与使用
+- 积分体系（签到 / 消费 / 积分日志）
+- 秒杀活动
+
+### 消息模块
+- 系统通知 / 订单通知
+- 用户间聊天
+
+### AI 模块
+- 个性化推荐
+- 行为记录
+- AI 对话
+
+### 数据看板
+- 销售概览 / 趋势图
+- 商品排行 / 用户活跃分析
+
+### 商家模块
+- 商家入驻 / 店铺管理
+- 商品管理
 
 ## 快速开始
 
-### 环境要求
-
-- Docker & Docker Compose
-- Node.js 18+ (可选，用于本地开发)
+### 前提条件
+- Node.js 20+
+- Docker Desktop
+- Android Studio（打包用）
 
 ### 一键启动
 
-```powershell
+```bash
 # 克隆项目
 git clone git@github.com:1173598855-dot/e-commerce_platform.git
 cd e-commerce_platform
 
-# 启动所有服务
-docker compose -p ecommerce up -d
+# 启动全部服务
+docker compose -p ecommerce up -d --build
 
-# 查看服务状态
-docker compose -p ecommerce ps
-
-# 查看日志
-docker compose -p ecommerce logs -f
-```
-
-### 初始化数据
-
-```powershell
-# 等待 MySQL 启动（约10秒）
-Start-Sleep -Seconds 10
+# 等待 MySQL 初始化（约15秒）
+Start-Sleep -Seconds 15
 
 # 导入测试数据
 cmd /c "docker exec -i ecommerce-mysql mysql -uroot -proot ecommerce < database\seed.sql"
 ```
 
-### 验证服务
+### 验证部署
 
-```powershell
+```bash
 # 健康检查
-Invoke-WebRequest -Uri http://localhost:4000/api/health -UseBasicParsing
+Invoke-WebRequest -Uri http://localhost:4000/api/v1/health -UseBasicParsing
 
-# 商品列表
-Invoke-WebRequest -Uri http://localhost:4000/api/products -UseBasicParsing
-
-# 注册测试
-Invoke-WebRequest -Uri http://localhost:4000/api/auth/register -Method POST -ContentType "application/json" -Body '{"phone":"13900000001","password":"123456","nickname":"测试用户"}' -UseBasicParsing
+# 预期返回所有服务 healthy
 ```
 
-## API 文档
+### 前端开发
 
-### 基础 URL
+```bash
+cd frontend
+npm install
 
-```
-http://localhost:4000/api
-```
+# 切换环境变量（默认 development）
+cp .env.development .env
 
-### 公开接口（无需鉴权）
+# 启动 Metro
+npx react-native start
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| POST | /api/auth/register | 用户注册 |
-| POST | /api/auth/password-login | 密码登录 |
-| POST | /api/auth/sms-login | 短信验证码登录 |
-| POST | /api/auth/wx-login | 微信登录 |
-| POST | /api/auth/qq-login | QQ登录 |
-| POST | /api/auth/send-code | 发送验证码 |
-| GET | /api/products | 商品列表（分页、搜索、筛选） |
-| GET | /api/products/hot | 热门商品 |
-| GET | /api/products/:id | 商品详情 |
-| GET | /api/categories | 分类列表 |
-| GET | /api/search | 搜索商品 |
-| GET | /api/search/hot | 热门搜索 |
-| GET | /api/health | 健康检查 |
-
-### 鉴权接口（需 Bearer Token）
-
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | /api/auth/profile | 获取用户信息 |
-| PUT | /api/auth/profile | 更新用户信息 |
-| GET | /api/user/addresses | 收货地址列表 |
-| POST | /api/user/addresses | 新增收货地址 |
-| GET | /api/user/favorites | 收藏列表 |
-| POST | /api/user/favorites | 添加收藏 |
-| GET | /api/orders | 订单列表 |
-| POST | /api/orders | 创建订单 |
-| GET | /api/orders/:id | 订单详情 |
-| POST | /api/reviews | 提交评价 |
-
-### 鉴权方式
-
-```
-Header: Authorization: Bearer <token>
+# 运行 Android
+npx react-native run-android
 ```
 
-## 数据库设计
+## 服务端口
 
-共 25 张表，覆盖电商全业务场景：
+| 服务 | 端口 | 说明 | 对外 |
+|------|------|------|------|
+| Nginx | 80 / 443 | 反向代理 | ✅ |
+| API Gateway | 4000 | 统一入口 | ✅（开发） |
+| Auth Service | 4006 | 认证服务 | ❌ |
+| User Service | 4001 | 用户服务 | ❌ |
+| Product Service | 4002 | 商品服务 | ❌ |
+| Order Service | 4003 | 订单服务 | ❌ |
+| MQ Service | 4004 | 消息服务 | ❌ |
+| Search Service | 4005 | 搜索服务 | ❌ |
+| MySQL | 3306 | 数据库 | ❌ |
+| Redis | 6379 | 缓存 | ❌ |
 
-- **用户相关**: users, addresses, favorites, user_coupons, points_logs, search_histories, user_behavior_logs
-- **商品相关**: products, categories, product_images, product_skus, product_spec_options
-- **订单相关**: orders, order_items
-- **营销相关**: coupons, flash_sales
-- **社交相关**: reviews, chat_messages, notifications
-- **商家相关**: merchants
-- **搜索相关**: hot_searches
-
-详见 `database/schema.sql`
-
-## 功能特性
-
-### 核心功能
-
-- [x] 用户注册登录（手机号 + 密码/短信/微信/QQ）
-- [x] 商品管理（分类/SKU/库存/多图）
-- [x] 购物车
-- [x] 订单流程（创建 → 支付 → 发货 → 完成）
-- [x] 模拟支付
-- [x] 商品评价
-- [x] 收藏夹
-- [x] 收货地址管理
-- [x] 优惠券系统
-- [x] 积分系统
-- [x] 消息通知
-- [x] IM聊天
-- [x] 搜索（关键词/历史/热词/联想）
-- [x] 短视频
-- [x] 物流追踪
-
-### 增强功能
-
-- [x] 微服务架构
-- [x] API Gateway（JWT鉴权 + 限流 + 日志）
-- [x] Redis 缓存
-- [x] Docker Compose 编排
-- [x] 秒杀活动
-- [x] 商家后台
-- [x] 数据看板
-- [ ] Elasticsearch 搜索引擎
-- [ ] RabbitMQ 消息队列
-- [ ] 服务监控 (Prometheus + Grafana)
-- [ ] CI/CD 流水线
+> 生产环境只有 Nginx 对外，微服务端口不暴露。
 
 ## 项目结构
 
 ```
+├── frontend/                    # React Native 前端
+│   ├── App.js                   # 入口
+│   ├── src/
+│   │   ├── api/                 # 请求封装（axios + Token刷新）
+│   │   ├── screens/             # 页面（28个）
+│   │   ├── navigation/          # 路由导航
+│   │   ├── components/          # 公共组件
+│   │   └── store/               # 状态管理
+│   ├── .env.development         # 开发环境
+│   ├── .env.staging             # 预发布环境
+│   └── .env.production          # 生产环境
+│
 ├── backend/
-│   ├── microservices/
-│   │   ├── gateway/          # API 网关
-│   │   ├── auth-service/     # 认证服务
-│   │   ├── user-service/     # 用户服务
-│   │   ├── product-service/  # 商品服务
-│   │   ├── order-service/    # 订单服务
-│   │   ├── mq-service/       # 消息队列服务
-│   │   ├── search-service/   # 搜索服务
-│   │   └── shared/           # 共享工具库
-│   └── src/                  # 旧版单体代码（参考）
-├── frontend/
-│   └── src/
-│       ├── api/              # API 请求封装
-│       ├── pages/            # 页面组件
-│       └── components/       # 公共组件
+│   ├── microservices/           # 微服务
+│   │   ├── gateway/             # API 网关（统一入口）
+│   │   ├── auth-service/        # 认证服务
+│   │   ├── user-service/        # 用户服务
+│   │   ├── product-service/     # 商品服务
+│   │   ├── order-service/       # 订单服务
+│   │   ├── mq-service/          # 消息服务
+│   │   └── search-service/      # 搜索服务
+│   └── src/                     # 单体模式（备用）
+│
 ├── database/
-│   ├── schema.sql            # 数据库建表脚本（完整版）
-│   └── seed.sql              # 测试数据
+│   ├── schema.sql               # 建表脚本
+│   ├── migrate_v2.sql           # 迁移脚本
+│   └── seed.sql                 # 测试数据
+│
 ├── nginx/
-│   └── nginx.conf            # Nginx 配置
-├── docker-compose.yml        # Docker 编排
-└── .github/
-    └── workflows/ci.yml      # CI/CD 配置
+│   └── nginx.conf               # Nginx 配置（HTTPS）
+│
+├── docker-compose.yml           # 容器编排
+├── DEPLOYMENT.md                # 部署文档
+├── BUILD_GUIDE.md               # App 打包指南
+└── PRODUCTION_CHECKLIST.md      # 上线清单
 ```
 
-## 开发指南
+## 统一错误码
 
-### 本地开发
+| 码段 | 含义 | 示例 |
+|------|------|------|
+| `10000` | 成功 | 登录成功、下单成功 |
+| `20000` | 参数错误 | 缺少手机号、格式不对 |
+| `30000` | 鉴权失败 | Token 过期、被顶号、账号冻结 |
+| `40000` | 业务失败 | 用户不存在、库存不足 |
+| `50000` | 系统异常 | 服务不可用、超时 |
 
-```powershell
-# 启动 MySQL + Redis
-docker compose -p ecommerce up -d mysql redis
-
-# 启动微服务（各目录独立）
-cd backend/microservices/auth-service
-npm install
-npm start
-
-# 启动前端
-cd frontend
-npm install
-npx expo start
+统一响应格式：
+```json
+{
+  "success": false,
+  "code": "TOKEN_EXPIRED",
+  "message": "Token已过期",
+  "requestId": "cc9116f1-4b48-4ee3-9f66-6ce2b6bae240"
+}
 ```
 
-### 新增微服务
+## 短信验证码
 
-1. 在 `backend/microservices/` 下创建服务目录
-2. 添加 `index.js`、`package.json`、`Dockerfile`
-3. 复制 `shared/` 目录到服务目录内
-4. 在 `docker-compose.yml` 中添加服务配置
-5. 在 `gateway/index.js` 中添加路由规则
+支持三通道，通过 `.env` 切换：
 
-### 测试
-
-```powershell
-# 健康检查
-Invoke-WebRequest -Uri http://localhost:4000/api/health -UseBasicParsing | Select-Object -ExpandProperty Content
+```
+SMS_PROVIDER=console    # 开发：日志打印
+SMS_PROVIDER=aliyun     # 生产：阿里云短信
+SMS_PROVIDER=tencent    # 生产：腾讯云短信
 ```
 
-## 部署
+限频策略：
+- 同手机号 60s 冷却
+- 同手机号每日上限 10 次
+- 同 IP 每日上限 20 次
 
-### Docker Compose（推荐）
+## API 前缀
 
-```powershell
-docker compose -p ecommerce up -d --build
-```
+- 旧版兼容：`/api/*`
+- 新版推荐：`/api/v1/*`
+- 两个前缀均可访问，推荐新项目直接用 `/api/v1/*`
 
-### 生产环境建议
+## 文档
 
-- 使用 Nginx 反向代理 + SSL
-- 配置域名和 CORS
-- 添加 Elasticsearch 搜索引擎
-- 引入 Redis Cluster 高可用
-- 使用 Kubernetes 编排
-- 配置 CI/CD 自动部署
+- [部署文档](DEPLOYMENT.md) - 完整部署流程
+- [打包指南](BUILD_GUIDE.md) - RN App 打包 APK/AAB
+- [上线清单](PRODUCTION_CHECKLIST.md) - 生产上线逐项核对
 
-## 许可证
+## License
 
-MIT License
-
-## 联系方式
-
-如有问题请提交 Issue 或联系项目负责人
+MIT

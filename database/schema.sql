@@ -1,4 +1,4 @@
--- 创建数据库
+﻿-- 创建数据库
 CREATE DATABASE IF NOT EXISTS ecommerce DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE ecommerce;
 
@@ -9,17 +9,37 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) DEFAULT '',
   nickname VARCHAR(50) NOT NULL,
   avatar VARCHAR(255) DEFAULT '',
-  status TINYINT DEFAULT 1 COMMENT '1正常 0禁用',
+  status TINYINT DEFAULT 1 COMMENT '1正常 0冻结',
   points INT DEFAULT 0 COMMENT '用户积分',
   last_login_time DATETIME DEFAULT NULL,
+  last_login_ip VARCHAR(50) DEFAULT NULL COMMENT '上次登录IP',
   wechat_openid VARCHAR(100) DEFAULT NULL,
+  wechat_unionid VARCHAR(100) DEFAULT NULL COMMENT '微信unionid（开放平台）',
   qq_openid VARCHAR(100) DEFAULT NULL,
   login_type VARCHAR(20) DEFAULT 'password',
+  register_source VARCHAR(20) DEFAULT 'app' COMMENT '注册来源: app/wechat/qq/h5',
+  device_id VARCHAR(200) DEFAULT NULL COMMENT '设备标识',
+  status_desc VARCHAR(20) DEFAULT 'active' COMMENT '状态分层: active/frozen/deactivating',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_phone (phone),
   INDEX idx_wechat (wechat_openid),
-  INDEX idx_qq (qq_openid)
+  INDEX idx_wechat_unionid (wechat_unionid),
+  INDEX idx_qq (qq_openid),
+  INDEX idx_status_desc (status_desc),
+  INDEX idx_register_source (register_source)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 短信发送记录表
+CREATE TABLE IF NOT EXISTS sms_send_log (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  phone VARCHAR(20) NOT NULL,
+  ip VARCHAR(50) DEFAULT NULL COMMENT '发送者IP',
+  provider VARCHAR(20) DEFAULT 'aliyun' COMMENT '短信通道: aliyun/tencent',
+  status VARCHAR(20) DEFAULT 'sent' COMMENT 'sent/failed',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_phone_created (phone, created_at),
+  INDEX idx_ip_created (ip, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 分类表
@@ -142,49 +162,33 @@ CREATE TABLE IF NOT EXISTS addresses (
 -- 订单表
 CREATE TABLE IF NOT EXISTS orders (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  order_no VARCHAR(32) NOT NULL UNIQUE,
+  order_no VARCHAR(50) NOT NULL UNIQUE,
   user_id INT NOT NULL,
   total_amount DECIMAL(10,2) NOT NULL,
-  status VARCHAR(20) DEFAULT 'pending' COMMENT 'pending paid shipped completed cancelled',
-  shipping_address JSON DEFAULT NULL,
-  remark TEXT,
-  payment_method VARCHAR(20) DEFAULT NULL,
-  paid_at DATETIME DEFAULT NULL,
-  shipped_at DATETIME DEFAULT NULL,
-  completed_at DATETIME DEFAULT NULL,
+  status VARCHAR(20) DEFAULT 'pending' COMMENT 'pending/paid/shipped/completed/cancelled',
+  address_snapshot JSON DEFAULT NULL COMMENT '下单时地址快照',
+  remark VARCHAR(255) DEFAULT '',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id),
   INDEX idx_user (user_id),
-  INDEX idx_status (status),
-  INDEX idx_created (created_at),
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 订单项表
+-- 订单明细表
 CREATE TABLE IF NOT EXISTS order_items (
   id INT AUTO_INCREMENT PRIMARY KEY,
   order_id INT NOT NULL,
   product_id INT NOT NULL,
-  quantity INT NOT NULL,
+  product_name VARCHAR(200) NOT NULL,
+  product_image VARCHAR(255) DEFAULT '',
   price DECIMAL(10,2) NOT NULL,
-  subtotal DECIMAL(10,2) NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (order_id) REFERENCES orders(id),
+  quantity INT NOT NULL,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 收藏表
-CREATE TABLE IF NOT EXISTS favorites (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL,
-  product_id INT NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id),
-  FOREIGN KEY (product_id) REFERENCES products(id),
-  UNIQUE KEY uk_user_product (user_id, product_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 评论表
+-- 评价表
 CREATE TABLE IF NOT EXISTS reviews (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
@@ -229,7 +233,7 @@ CREATE TABLE IF NOT EXISTS user_coupons (
 CREATE TABLE IF NOT EXISTS points_logs (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
-  points INT NOT NULL COMMENT '积分变化，正数获得 负数消耗',
+  points INT NOT NULL COMMENT '积分变化：正数获得 负数消费',
   type VARCHAR(50) NOT NULL COMMENT '类型：signup/reorder/refund/seckill等',
   description VARCHAR(255) DEFAULT '',
   related_id INT DEFAULT NULL COMMENT '关联ID',
@@ -315,10 +319,8 @@ CREATE TABLE IF NOT EXISTS search_histories (
 CREATE TABLE IF NOT EXISTS hot_searches (
   id INT AUTO_INCREMENT PRIMARY KEY,
   keyword VARCHAR(100) NOT NULL,
-  search_count INT DEFAULT 0,
-  is_hot TINYINT DEFAULT 0,
-  sort_order INT DEFAULT 0,
+  search_count INT DEFAULT 1,
+  status TINYINT DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_hot (is_hot, sort_order)
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
