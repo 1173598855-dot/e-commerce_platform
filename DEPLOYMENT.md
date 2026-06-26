@@ -1,241 +1,137 @@
-# 电商平台部署指南
-
-## 目录结构
-```
-ecommerce-platform/
-├── backend/
-│   └── microservices/
-│       ├── common/
-│       ├── user-service/
-│       ├── product-service/
-│       ├── order-service/
-│       ├── mq-service/
-│       ├── search-service/
-│       └── gateway/
-├── frontend/
-├── database/
-└── docker-compose.yml
-```
-
-## 环境要求
-- Docker & Docker Compose
-- Node.js 18+ (本地开发)
-- MySQL 8.0
-- Redis 7
+# 部署文档
 
 ## 快速部署
 
-### 1. 使用 Docker Compose 一键部署
-```bash
+### 前提条件
+
+- Docker Desktop 已安装并运行
+- 端口 3306、4000-4006、6379、8080 未被占用
+
+### 一键启动
+
+```powershell
+cd e-commerce_platform
+
 # 构建并启动所有服务
-docker-compose up -d --build
+docker compose -p ecommerce up -d --build
 
+# 等待 MySQL 初始化（约15秒）
+Start-Sleep -Seconds 15
+
+# 导入测试数据
+cmd /c "docker exec -i ecommerce-mysql mysql -uroot -proot ecommerce < database\seed.sql"
+```
+
+### 验证部署
+
+```powershell
 # 查看服务状态
-docker-compose ps
+docker compose -p ecommerce ps
 
-# 查看日志
-docker-compose logs -f
-```
+# 健康检查
+Invoke-WebRequest -Uri http://localhost:4000/api/health -UseBasicParsing | Select-Object -ExpandProperty Content
 
-### 2. 本地开发部署
-
-#### 启动数据库和缓存
-```bash
-# 启动 MySQL (phpStudy)
-# 启动 Redis (Docker)
-docker run -d --name ecommerce-redis -p 6379:6379 redis:7-alpine
-```
-
-#### 安装依赖
-```bash
-cd backend/microservices
-npm install
-```
-
-#### 启动微服务
-```bash
-# 启动所有服务
-npm run start:all
-
-# 或单独启动某个服务
-npm run start:user
-npm run start:product
-npm run start:order
-npm run start:search
-npm run start:gateway
-```
-
-### 3. 数据库初始化
-```bash
-# 导入数据库结构
-mysql -u root -p ecommerce < database/schema.sql
+# 预期返回：
+# {"success":true,"message":"所有服务正常","data":{"gateway":"healthy","services":{...}}}
 ```
 
 ## 服务端口
-- API 网关: 3000
-- 用户服务: 3001
-- 商品服务: 3002
-- 订单服务: 3003
-- 消息队列: 3004
-- 搜索服务: 3005
-- MySQL: 3306
-- Redis: 6379
 
-## 环境变量配置
-创建 `.env` 文件：
-```env
-# 服务器配置
-PORT=3000
-NODE_ENV=production
+| 服务 | 端口 | 说明 |
+|------|------|------|
+| API Gateway | 4000 | 统一入口 |
+| Auth Service | 4006 | 认证服务 |
+| User Service | 4001 | 用户服务 |
+| Product Service | 4002 | 商品服务 |
+| Order Service | 4003 | 订单服务 |
+| MQ Service | 4004 | 消息服务 |
+| Search Service | 4005 | 搜索服务 |
+| MySQL | 3306 | 数据库 |
+| Redis | 6379 | 缓存 |
+| Nginx | 8080 | 反向代理 |
 
-# MySQL配置
-DB_HOST=mysql
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=root
-DB_NAME=ecommerce
+## 常用命令
 
-# Redis配置
-REDIS_HOST=redis
-REDIS_PORT=6379
+```powershell
+# 查看日志
+docker compose -p ecommerce logs -f
+docker compose -p ecommerce logs -f gateway
+docker compose -p ecommerce logs -f auth-service
 
-# JWT配置
-JWT_SECRET=your_secure_jwt_secret_key
-JWT_EXPIRES_IN=7d
+# 重启单个服务
+docker restart ecommerce-gateway
+
+# 停止所有服务
+docker compose -p ecommerce down
+
+# 停止并删除数据卷（慎用，会清空数据库）
+docker compose -p ecommerce down -v
+
+# 进入容器调试
+docker exec -it ecommerce-mysql mysql -uroot -proot ecommerce
+docker exec -it ecommerce-gateway sh
 ```
 
-## 阿里云部署
+## 环境变量
 
-### 1. 准备云服务器
-- 选择配置：4核8GB及以上
-- 操作系统：Ubuntu 20.04 LTS 或 CentOS 7+
-- 安全组规则：开放端口 3000-3005, 3306, 6379
+在 `docker-compose.yml` 中配置：
 
-### 2. 安装依赖
-```bash
-# 安装 Docker
-curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
-
-# 安装 Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+```yaml
+environment:
+  DB_HOST: mysql
+  DB_PORT: 3306
+  DB_USER: root
+  DB_PASSWORD: root
+  DB_NAME: ecommerce
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  JWT_SECRET: ecommerce_jwt_secret_key_2024
 ```
 
-### 3. 部署应用
-```bash
-# 克隆项目
-git clone <your-repo-url>
-cd ecommerce-platform
+## 数据库管理
 
-# 配置环境变量
-cp .env.example .env
-# 编辑 .env 文件配置生产环境参数
+### 重置数据库
 
-# 启动服务
-docker-compose up -d
+```powershell
+# 删除数据卷并重建
+docker compose -p ecommerce down -v
+docker volume rm ecommerce_mysql_data 2>$null
+docker compose -p ecommerce up -d mysql
+Start-Sleep -Seconds 15
+cmd /c "docker exec -i ecommerce-mysql mysql -uroot -proot ecommerce < database\schema.sql"
+cmd /c "docker exec -i ecommerce-mysql mysql -uroot -proot ecommerce < database\seed.sql"
 ```
 
-### 4. 配置 Nginx 反向代理
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
+### 备份数据库
 
-    location /api/ {
-        proxy_pass http://localhost:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-}
+```powershell
+docker exec ecommerce-mysql mysqldump -uroot -proot ecommerce > backup.sql
 ```
-
-## 腾讯云部署
-
-### 1. 使用云容器服务
-- 创建 TKE 集群
-- 导入 docker-compose.yml
-- 配置负载均衡
-
-### 2. 使用云数据库
-- 替换本地 MySQL 为云数据库 RDS
-- 替换本地 Redis 为云数据库 Redis
-
-## 监控和日志
-
-### 1. 健康检查端点
-```bash
-# 检查所有服务状态
-curl http://localhost:3000/api/health
-```
-
-### 2. 日志收集
-```bash
-# 查看特定服务日志
-docker-compose logs -f user-service
-```
-
-## 备份和恢复
-
-### 1. 数据库备份
-```bash
-# 备份 MySQL
-docker exec ecommerce-mysql mysqldump -u root -p ecommerce > backup_$(date +%Y%m%d).sql
-
-# 恢复数据库
-docker exec -i ecommerce-mysql mysql -u root -p ecommerce < backup.sql
-```
-
-### 2. Redis 备份
-```bash
-# Redis 持久化文件在 volumes/redis_data 目录
-```
-
-## 性能优化建议
-
-1. **数据库优化**
-   - 添加适当索引
-   - 使用连接池
-   - 定期分析和优化表
-
-2. **缓存策略**
-   - 热点数据缓存
-   - 设置合理的过期时间
-   - 使用 Redis 集群
-
-3. **负载均衡**
-   - 使用 Nginx 或云负载均衡
-   - 水平扩展微服务实例
-
-4. **监控告警**
-   - 使用 Prometheus + Grafana
-   - 配置关键指标告警
 
 ## 故障排查
 
-### 1. 服务无法启动
-```bash
-# 检查端口占用
-netstat -tulpn | grep :3000
+### 服务无法启动
 
-# 检查服务日志
-docker-compose logs user-service
+```powershell
+# 查看容器状态
+docker compose -p ecommerce ps
+
+# 查看错误日志
+docker compose -p ecommerce logs --tail=50 [服务名]
 ```
 
-### 2. 数据库连接失败
-```bash
-# 检查 MySQL 状态
-docker exec -it ecommerce-mysql mysql -u root -p -e "STATUS"
+### 常见问题
 
-# 测试连接
-mysql -h localhost -P 3306 -u root -p ecommerce
-```
+1. **端口被占用**: 修改 docker-compose.yml 中的端口映射
+2. **MySQL 连接失败**: 等待 MySQL 完全启动（约15秒）
+3. **镜像拉取失败**: 配置 Docker 镜像加速器
+4. **注册/登录失败**: 检查 auth-service 日志，确认数据库字段完整
 
-### 3. Redis 连接失败
-```bash
-# 检查 Redis 状态
-docker exec -it ecommerce-redis redis-cli ping
+## 生产环境建议
 
-# 测试连接
-redis-cli -h localhost -p 6379 ping
-```
+- [ ] 使用外部 MySQL + Redis（非 Docker 内）
+- [ ] 配置 SSL 证书（HTTPS）
+- [ ] 设置强密码和 JWT Secret
+- [ ] 配置防火墙规则
+- [ ] 启用日志收集和监控
+- [ ] 使用 Kubernetes 编排
