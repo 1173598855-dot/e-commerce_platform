@@ -1,0 +1,100 @@
+﻿name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ==================== 语法检查 ====================
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - name: Install shared deps
+        working-directory: backend/microservices
+        run: npm install
+      - name: Lint microservices
+        working-directory: backend/microservices
+        run: |
+          for svc in auth-service user-service product-service order-service search-service mq-service gateway; do
+            echo "Checking $svc..."
+            node -c "$svc/index.js"
+          done
+
+  # ==================== 单元测试 ====================
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: ecommerce
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - name: Install dependencies
+        working-directory: backend/microservices
+        run: npm install
+      - name: Wait for MySQL
+        run: sleep 15
+      - name: Run tests
+        working-directory: backend/microservices
+        run: npm test
+        env:
+          DB_HOST: localhost
+          DB_PORT: 3306
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: ecommerce
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET: test_secret
+
+  # ==================== Docker 构建 ====================
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build all services
+        run: docker compose build
+      - name: Verify images
+        run: docker images | grep ecommerce
+
+  # ==================== 部署（仅 main 分支） ====================
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy with Docker Compose
+        run: |
+          docker compose down
+          docker compose up -d
+          sleep 10
+          docker compose ps
+      - name: Health check
+        run: |
+          curl -f http://localhost:80/health || exit 1
+          echo "All services healthy!"

@@ -72,24 +72,38 @@ async function consumePoints(req, res) {
       return sendError(res, '积分数量必须大于0', 400);
     }
 
-    const [users] = await mysqlPool.execute('SELECT points FROM users WHERE id = ?', [userId]);
-    
-    if (users.length === 0) {
-      return sendError(res, '用户不存在', 404);
+    const connection = await mysqlPool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [users] = await connection.execute('SELECT points FROM users WHERE id = ? FOR UPDATE', [userId]);
+
+      if (users.length === 0) {
+        await connection.rollback();
+        return sendError(res, '用户不存在', 404);
+      }
+
+      if (users[0].points < points) {
+        await connection.rollback();
+        return sendError(res, '积分余额不足', 400);
+      }
+
+      await connection.execute('UPDATE users SET points = points - ? WHERE id = ?', [points, userId]);
+      await connection.execute(
+        'INSERT INTO points_logs (user_id, points, type, related_id) VALUES (?, ?, ?, ?)',
+        [userId, -points, type || 'consume', relatedId || null]
+      );
+
+      await connection.commit();
+
+      const [newBalance] = await mysqlPool.execute('SELECT points FROM users WHERE id = ?', [userId]);
+      sendRes(res, { points: newBalance[0].points }, '积分消费成功');
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
     }
-
-    if (users[0].points < points) {
-      return sendError(res, '积分余额不足', 400);
-    }
-
-    await mysqlPool.execute('UPDATE users SET points = points - ? WHERE id = ?', [points, userId]);
-    await mysqlPool.execute(
-      'INSERT INTO points_logs (user_id, points, type, related_id) VALUES (?, ?, ?, ?)',
-      [userId, -points, type || 'consume', relatedId || null]
-    );
-
-    const [newBalance] = await mysqlPool.execute('SELECT points FROM users WHERE id = ?', [userId]);
-    sendRes(res, { points: newBalance[0].points }, '积分消费成功');
   } catch (err) {
     console.error('积分消费错误:', err);
     sendError(res, '积分消费失败', 500);
@@ -97,3 +111,4 @@ async function consumePoints(req, res) {
 }
 
 module.exports = { getPoints, addPoints, getPointsLogs, consumePoints };
+

@@ -1,6 +1,4 @@
-version: '3.8'
-
-services:
+﻿services:
   # MySQL 数据库
   mysql:
     image: mysql:8.0
@@ -13,7 +11,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
     command: --default-authentication-plugin=mysql_native_password
     networks:
       - ecommerce-net
@@ -31,15 +29,39 @@ services:
     networks:
       - ecommerce-net
 
-  # 用户微服务
+  # Auth 微服务（认证中心）
+  auth-service:
+    build: ./backend/microservices/auth-service
+    container_name: ecommerce-auth-service
+    restart: always
+    ports:
+      - "4006:4006"
+    environment:
+      PORT: 4006
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: ecommerce
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ecommerce_jwt_secret_key_2024
+      NODE_ENV: production
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - ecommerce-net
+
+  # User 微服务
   user-service:
     build: ./backend/microservices/user-service
     container_name: ecommerce-user-service
     restart: always
     ports:
-      - "3001:3001"
+      - "4001:4001"
     environment:
-      PORT: 3001
+      USER_SERVICE_PORT: 4001
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: root
@@ -55,15 +77,15 @@ services:
     networks:
       - ecommerce-net
 
-  # 商品微服务
+  # Product 微服务
   product-service:
     build: ./backend/microservices/product-service
     container_name: ecommerce-product-service
     restart: always
     ports:
-      - "3002:3002"
+      - "4002:4002"
     environment:
-      PORT: 3002
+      PRODUCT_SERVICE_PORT: 4002
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: root
@@ -79,15 +101,15 @@ services:
     networks:
       - ecommerce-net
 
-  # 订单微服务
+  # Order 微服务
   order-service:
     build: ./backend/microservices/order-service
     container_name: ecommerce-order-service
     restart: always
     ports:
-      - "3003:3003"
+      - "4003:4003"
     environment:
-      PORT: 3003
+      ORDER_SERVICE_PORT: 4003
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: root
@@ -103,15 +125,15 @@ services:
     networks:
       - ecommerce-net
 
-  # 消息队列服务
+  # MQ 微服务
   mq-service:
     build: ./backend/microservices/mq-service
     container_name: ecommerce-mq-service
     restart: always
     ports:
-      - "3004:3004"
+      - "4004:4004"
     environment:
-      PORT: 3004
+      MQ_SERVICE_PORT: 4004
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: root
@@ -127,15 +149,15 @@ services:
     networks:
       - ecommerce-net
 
-  # 搜索服务
+  # Search 微服务
   search-service:
     build: ./backend/microservices/search-service
     container_name: ecommerce-search-service
     restart: always
     ports:
-      - "3005:3005"
+      - "4005:4005"
     environment:
-      PORT: 3005
+      SEARCH_SERVICE_PORT: 4005
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: root
@@ -157,21 +179,38 @@ services:
     container_name: ecommerce-gateway
     restart: always
     ports:
-      - "3000:3000"
+      - "4000:4000"
     environment:
-      GATEWAY_PORT: 3000
-      USER_SERVICE_PORT: 3001
-      PRODUCT_SERVICE_PORT: 3002
-      ORDER_SERVICE_PORT: 3003
-      MQ_SERVICE_PORT: 3004
-      SEARCH_SERVICE_PORT: 3005
+      GATEWAY_PORT: 4000
+      USER_SERVICE_PORT: 4001
+      PRODUCT_SERVICE_PORT: 4002
+      ORDER_SERVICE_PORT: 4003
+      MQ_SERVICE_PORT: 4004
+      SEARCH_SERVICE_PORT: 4005
+      AUTH_SERVICE_PORT: 4006
+      JWT_SECRET: ecommerce_jwt_secret_key_2024
       NODE_ENV: production
     depends_on:
+      - auth-service
       - user-service
       - product-service
       - order-service
       - mq-service
       - search-service
+    networks:
+      - ecommerce-net
+
+  # Nginx 反向代理（P3）
+  nginx:
+    image: nginx:alpine
+    container_name: ecommerce-nginx
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - gateway
     networks:
       - ecommerce-net
 

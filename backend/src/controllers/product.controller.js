@@ -8,7 +8,8 @@ async function getProductList(req, res) {
     const pageSize = parseInt(req.query.pageSize) || 20;
     const keyword = req.query.keyword || '';
     const categoryId = req.query.categoryId || null;
-    const sortBy = req.query.sortBy || 'created_at';
+    const allowedSortFields = ['created_at', 'price', 'sales', 'stock', 'name'];
+    const sortBy = allowedSortFields.includes(req.query.sortBy) ? req.query.sortBy : 'created_at';
     const sortOrder = req.query.sortOrder === 'asc' ? 'ASC' : 'DESC';
 
     const offset = (page - 1) * pageSize;
@@ -109,10 +110,14 @@ async function createProduct(req, res) {
 
     // 保存商品图片
     if (images.length > 0) {
-      const values = images.map((img) => [productId, img]);
+      const placeholders = images.map(() => '(?, ?, ?)').join(', ');
+      const imageParams = [];
+      images.forEach((img, idx) => {
+        imageParams.push(productId, img, idx);
+      });
       await mysqlPool.execute(
-        'INSERT INTO product_images (product_id, image_url, sort_order) VALUES ?',
-        [values]
+        'INSERT INTO product_images (product_id, image_url, sort_order) VALUES ' + placeholders,
+        imageParams
       );
     }
 
@@ -197,3 +202,5 @@ module.exports = {
   deleteProduct,
   getHotProducts,
 };
+
+

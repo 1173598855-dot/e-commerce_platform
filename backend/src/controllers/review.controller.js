@@ -39,23 +39,24 @@ async function getReviews(req, res) {
       params
     );
 
-    // 计算平均评分
+    // 计算平均评分和全量评分分布
     const [[avg]] = await mysqlPool.execute(
       'SELECT AVG(rating) as avg_rating, COUNT(*) as total FROM reviews WHERE product_id = ?',
       [id]
     );
 
+    const [ratingRows] = await mysqlPool.execute(
+      'SELECT rating, COUNT(*) as cnt FROM reviews WHERE product_id = ? GROUP BY rating',
+      [id]
+    );
+    const dist = { '5': 0, '4': 0, '3': 0, '2': 0, '1': 0 };
+    ratingRows.forEach(row => { dist[String(row.rating)] = row.cnt; });
+
     sendRes(res, {
       list: reviews,
       averageRating: parseFloat(avg.avg_rating || 0).toFixed(1),
       totalReviews: count,
-      ratingDistribution: {
-        '5': reviews.filter(r => r.rating === 5).length,
-        '4': reviews.filter(r => r.rating === 4).length,
-        '3': reviews.filter(r => r.rating === 3).length,
-        '2': reviews.filter(r => r.rating === 2).length,
-        '1': reviews.filter(r => r.rating === 1).length,
-      },
+      ratingDistribution: dist,
       pagination: { page, pageSize, total: count },
     });
   } catch (err) {
@@ -75,6 +76,16 @@ async function createReview(req, res) {
 
     if (rating < 1 || rating > 5) {
       return sendError(res, '评分必须在1-5之间', 400);
+    }
+
+    if (order_id) {
+      const [orderCheck] = await mysqlPool.execute(
+        'SELECT id FROM orders WHERE id = ? AND user_id = ?',
+        [order_id, userId]
+      );
+      if (orderCheck.length === 0) {
+        return sendError(res, '关联订单不存在', 400);
+      }
     }
 
     const result = await mysqlPool.execute(

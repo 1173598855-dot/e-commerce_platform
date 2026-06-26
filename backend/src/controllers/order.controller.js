@@ -85,6 +85,13 @@ async function updateCartItem(req, res) {
       return sendError(res, '数量至少为1', 400);
     }
 
+    const [rows] = await mysqlPool.execute(
+      'SELECT id FROM cart_items WHERE id = ? AND user_id = ?',
+      [id, userId]
+    );
+    if (rows.length === 0) {
+      return sendError(res, '购物车项不存在', 404);
+    }
     await mysqlPool.execute('UPDATE cart_items SET quantity = ? WHERE id = ?', [quantity, id]);
     sendRes(res, null, '购物车已更新');
   } catch (err) {
@@ -96,6 +103,14 @@ async function updateCartItem(req, res) {
 async function removeCartItem(req, res) {
   try {
     const { id } = req.params;
+    const userId = req.user.userId;
+    const [rows] = await mysqlPool.execute(
+      'SELECT id FROM cart_items WHERE id = ? AND user_id = ?',
+      [id, userId]
+    );
+    if (rows.length === 0) {
+      return sendError(res, '购物车项不存在', 404);
+    }
     await mysqlPool.execute('DELETE FROM cart_items WHERE id = ?', [id]);
     sendRes(res, null, '已从购物车移除');
   } catch (err) {
@@ -117,7 +132,7 @@ async function clearCart(req, res) {
 async function createOrder(req, res) {
   try {
     const userId = req.user.userId;
-    const { items, address, remark } = req.body;
+    const { items, address, remark, user_coupon_id } = req.body;
 
     if (!items || items.length === 0) {
       return sendError(res, '订单商品不能为空', 400);
@@ -179,6 +194,38 @@ async function createOrder(req, res) {
         );
       }
 
+      // 使用优惠券抵扣
+      let couponDiscount = 0;
+      if (user_coupon_id) {
+        const [userCoupons] = await connection.execute(
+          'SELECT uc.*, c.type, c.condition_amount, c.discount_amount, c.min_order_amount FROM user_coupons uc JOIN coupons c ON uc.coupon_id = c.id WHERE uc.id = ? AND uc.user_id = ? AND uc.status = 1',
+          [user_coupon_id, userId]
+        );
+
+        if (userCoupons.length > 0) {
+          const coupon = userCoupons[0];
+          if (totalAmount >= coupon.min_order_amount) {
+            if (coupon.type === 1) {
+              couponDiscount = coupon.discount_amount;
+            } else if (coupon.type === 2) {
+              couponDiscount = Math.round(totalAmount * (1 - coupon.discount_amount / 10) * 100) / 100;
+            } else {
+              couponDiscount = coupon.discount_amount;
+            }
+            couponDiscount = Math.min(couponDiscount, totalAmount);
+            await connection.execute(
+              'UPDATE user_coupons SET status = 2, order_id = ?, used_at = NOW() WHERE id = ?',
+              [orderId, user_coupon_id]
+            );
+            await connection.execute(
+              'UPDATE orders SET total_amount = total_amount - ? WHERE id = ?',
+              [couponDiscount, orderId]
+            );
+            totalAmount = Math.max(0, totalAmount - couponDiscount);
+          }
+        }
+      }
+
       // 清空购物车项
       if (items.every(i => !i.order_item_id)) {
         await connection.execute('DELETE FROM cart_items WHERE user_id = ?', [userId]);
@@ -186,7 +233,11 @@ async function createOrder(req, res) {
 
       await connection.commit();
 
-      sendRes(res, { orderId, totalAmount: totalAmount.toFixed(2) }, '订单创建成功');
+      const resultData = { orderId, totalAmount: totalAmount.toFixed(2) };
+      if (couponDiscount > 0) {
+        resultData.couponDiscount = couponDiscount.toFixed(2);
+      }
+      sendRes(res, resultData, '订单创建成功');
     } catch (err) {
       await connection.rollback();
       throw err;
@@ -292,22 +343,33 @@ async function cancelOrder(req, res) {
       return sendError(res, '该订单状态不允许取消', 400);
     }
 
-    await mysqlPool.execute(
-      'UPDATE orders SET status = ? WHERE id = ?',
-      ['cancelled', id]
-    );
+    const connection = await mysqlPool.getConnection();
+    try {
+      await connection.beginTransaction();
 
-    // 恢复库存
-    const [items] = await mysqlPool.execute(
-      'SELECT product_id, quantity FROM order_items WHERE order_id = ?',
-      [id]
-    );
-
-    for (const item of items) {
-      await mysqlPool.execute(
-        'UPDATE products SET stock = stock + ? WHERE id = ?',
-        [item.quantity, item.product_id]
+      await connection.execute(
+        'UPDATE orders SET status = ? WHERE id = ?',
+        ['cancelled', id]
       );
+
+      const [items] = await connection.execute(
+        'SELECT product_id, quantity FROM order_items WHERE order_id = ?',
+        [id]
+      );
+
+      for (const item of items) {
+        await connection.execute(
+          'UPDATE products SET stock = stock + ? WHERE id = ?',
+          [item.quantity, item.product_id]
+        );
+      }
+
+      await connection.commit();
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
     }
 
     sendRes(res, null, '订单已取消');
@@ -352,3 +414,6 @@ module.exports = {
   cancelOrder,
   confirmOrder,
 };
+
+
+

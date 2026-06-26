@@ -25,7 +25,11 @@ async function applyMerchant(req, res) {
 // 获取商家信息
 async function getMerchantInfo(req, res) {
   try {
-    const [merchants] = await mysqlPool.execute('SELECT * FROM merchants WHERE id = ?', [req.user.merchantId || 1]);
+    const merchantId = req.user.merchantId;
+    if (!merchantId) {
+      return sendError(res, '未关联商家信息', 404);
+    }
+    const [merchants] = await mysqlPool.execute('SELECT * FROM merchants WHERE id = ?', [merchantId]);
     
     if (merchants.length === 0) {
       return sendError(res, '商家不存在', 404);
@@ -40,7 +44,10 @@ async function getMerchantInfo(req, res) {
 // 获取商家商品列表
 async function getMerchantProducts(req, res) {
   try {
-    const merchantId = req.user.merchantId || 1;
+    const merchantId = req.user.merchantId;
+    if (!merchantId) {
+      return sendError(res, '未关联商家信息', 404);
+    }
     const page = parseInt(req.query.page) || 1;
     const pageSize = parseInt(req.query.pageSize) || 20;
     const offset = (page - 1) * pageSize;

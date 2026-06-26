@@ -13,12 +13,12 @@ async function mockPayment(req, res) {
 
     // 查询订单
     const [orders] = await mysqlPool.execute(
-      'SELECT * FROM orders WHERE id = ? AND user_id = ? AND status IN (?, ?)',
-      [orderId, userId, 'pending', 'paid']
+      'SELECT * FROM orders WHERE id = ? AND user_id = ? AND status = ?',
+      [orderId, userId, 'pending']
     );
 
     if (orders.length === 0) {
-      return sendError(res, '订单不存在或状态不正确', 404);
+      return sendError(res, '订单不存在或已支付', 404);
     }
 
     const order = orders[0];
@@ -102,3 +102,4 @@ module.exports = {
   getPaymentStatus,
   getPaymentHistory,
 };
+

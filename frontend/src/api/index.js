@@ -6,8 +6,8 @@ export const authApi = {
   smsLogin: (data) => api.post('/auth/sms-login', data),
   passwordLogin: (data) => api.post('/auth/password-login', data),
   sendCode: (phone) => api.post('/auth/send-code', { phone }),
-  wxLogin: (data) => api.post('/auth/wx', data),
-  qqLogin: (data) => api.post('/auth/qq', data),
+  wxLogin: (data) => api.post('/auth/wx-login', data),
+  qqLogin: (data) => api.post('/auth/qq-login', data),
   getProfile: () => api.get('/auth/profile'),
   updateProfile: (data) => api.put('/auth/profile', data),
 };
@@ -46,15 +46,16 @@ export const cartApi = {
 export const orderApi = {
   createOrder: (data) => api.post('/orders', data),
   getOrders: (params) => api.get('/orders', { params }),
+  getOrderDetail: (id) => api.get(`/orders/${id}`),
   cancelOrder: (id) => api.put(`/orders/${id}/cancel`),
   confirmOrder: (id) => api.put(`/orders/${id}/confirm`),
 };
 
 // ========== 支付相关 ==========
 export const paymentApi = {
-  mockPay: (data) => api.post('/payments/mock', data),
-  getPaymentStatus: (orderId) => api.get(`/payments/${orderId}/status`),
-  getPaymentHistory: (params) => api.get('/payments/history', { params }),
+  mockPay: (data) => api.post('/orders/payment/mock', data),
+  getPaymentStatus: (orderId) => api.get(`/orders/payment/${orderId}/status`),
+  getPaymentHistory: (params) => api.get('/orders/payment/history', { params }),
 };
 
 // ========== 评价相关 ==========
@@ -124,7 +125,7 @@ export const aiApi = {
 export const searchApi = {
   getHot: () => api.get('/search/hot'),
   getSuggestions: (keyword) => api.get('/search/suggestions', { params: { keyword } }),
-  saveHistory: (data) => api.post('/search/history/save', data),
+  saveHistory: (data) => api.post('/search/history', data),
   getHistory: () => api.get('/search/history'),
   clearHistory: () => api.delete('/search/history'),
 };

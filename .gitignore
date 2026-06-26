@@ -30,3 +30,9 @@ npm-debug.log*
 
 # Coverage
 coverage/
+
+# Docker
+docker-compose.override.yml
+
+# Database data (don't commit large DB dumps)
+*.sql.bak
