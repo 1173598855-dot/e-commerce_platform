@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView
 } from 'react-native';
-import { Ionicons } from 'react-native-vector-icons';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { orderApi, couponApi } from '../api';
 
 export default function OrderCreateScreen({ route, navigation }) {
@@ -42,11 +42,11 @@ export default function OrderCreateScreen({ route, navigation }) {
 
   const handleCreate = async () => {
     if (items.length === 0) {
-      Alert.alert('ʾ', 'ûƷ');
+      Alert.alert('提示', '请选择商品');
       return;
     }
     if (!address) {
-      Alert.alert('ʾ', 'ѡջַ');
+      Alert.alert('提示', '请选择收货地址');
       return;
     }
 
@@ -69,15 +69,15 @@ export default function OrderCreateScreen({ route, navigation }) {
       const orderId = res.data.orderId;
       const amount = selectedCoupon ? finalAmount : res.data.totalAmount;
 
-      Alert.alert('µɹ', ': ' + amount, [
+      Alert.alert('下单成功', '订单金额: ' + amount, [
         {
-          text: 'ȥ֧',
+          text: '去支付',
           onPress: () => navigation.navigate('Payment', { orderId, amount }),
         },
-        { text: '', onPress: () => navigation.navigate('Main') },
+        { text: '查看订单', onPress: () => navigation.navigate('OrderList') },
       ]);
     } catch (err) {
-      Alert.alert('µʧ', err.message);
+      Alert.alert('下单失败', err.message);
     } finally {
       setSubmitting(false);
     }
@@ -87,14 +87,25 @@ export default function OrderCreateScreen({ route, navigation }) {
     navigation.navigate('Addresses', { onSelect: handleSelectAddress });
   };
 
+  const calcDiscount = (coupon) => {
+    if (!coupon) return;
+    if (coupon.type === 1) {
+      setDiscount(Math.min(coupon.discount_amount, totalAmount));
+    } else if (coupon.type === 2) {
+      setDiscount(totalAmount * (1 - coupon.discount_amount / 10));
+    } else {
+      setDiscount(coupon.discount_amount);
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
-      {/* ջַ */}
+      {/* 收货地址 */}
       <TouchableOpacity style={styles.addressCard} onPress={goToAddress}>
         {address ? (
           <View>
             <View style={styles.addressRow}>
-              <Ionicons name="location" size={20} color="#ff6b35" />
+              <Icon name="location" size={20} color="#ff6b35" />
               <View style={styles.addressInfo}>
                 <Text style={styles.addressText}>{address.receiver_name}  {address.receiver_phone}</Text>
                 <Text style={styles.addressDetail}>
@@ -105,38 +116,38 @@ export default function OrderCreateScreen({ route, navigation }) {
           </View>
         ) : (
           <View style={styles.addressRow}>
-            <Ionicons name="location-outline" size={20} color="#999" />
-            <Text style={styles.noAddress}>ѡջַ</Text>
-            <Ionicons name="chevron-forward" size={20} color="#ccc" />
+            <Icon name="location-outline" size={20} color="#999" />
+            <Text style={styles.noAddress}>请选择收货地址</Text>
+            <Icon name="chevron-forward" size={20} color="#ccc" />
           </View>
         )}
-        <Ionicons name="chevron-forward" size={20} color="#ccc" />
+        <Icon name="chevron-forward" size={20} color="#ccc" />
       </TouchableOpacity>
 
-      {/* ƷϢ */}
+      {/* 商品信息 */}
       <View style={styles.goodsCard}>
-        <Text style={styles.cardTitle}>ƷϢ</Text>
+        <Text style={styles.cardTitle}>商品信息</Text>
         {items.map((item, i) => (
           <View key={i} style={styles.goodsItem}>
             <View style={styles.goodsImg}>
               <Text style={styles.imgPlaceholder}>??</Text>
             </View>
             <View style={styles.goodsInfo}>
-              <Text style={styles.goodsName} numberOfLines={2}>{item.name || item.product_name || 'Ʒ'}</Text>
-              <Text style={styles.goodsSpec}>{item.spec || 'ĬϹ'}</Text>
+              <Text style={styles.goodsName} numberOfLines={2}>{item.name || item.product_name || '商品'}</Text>
+              <Text style={styles.goodsSpec}>{item.spec || '默认规格'}</Text>
               <View style={styles.goodsPriceRow}>
-                <Text style={styles.goodsPrice}>{item.price}</Text>
-                <Text style={styles.goodsQty}>{item.quantity || 1}</Text>
+                <Text style={styles.goodsPrice}>¥{item.price}</Text>
+                <Text style={styles.goodsQty}>x{item.quantity || 1}</Text>
               </View>
             </View>
           </View>
         ))}
       </View>
 
-      {/* Żȯ */}
+      {/* 优惠券 */}
       {availableCoupons.length > 0 && (
         <View style={styles.couponCard}>
-          <Text style={styles.cardTitle}>Żȯ</Text>
+          <Text style={styles.cardTitle}>优惠券</Text>
           <TouchableOpacity
             style={styles.couponItem}
             onPress={() => {
@@ -151,27 +162,27 @@ export default function OrderCreateScreen({ route, navigation }) {
           >
             <View style={styles.couponLeft}>
               <Text style={styles.couponAmt}>
-                {availableCoupons[0].type === 2 ? '' : ''}{availableCoupons[0].discount_amount}
-                {availableCoupons[0].type === 2 ? '' : ''}
+                {availableCoupons[0].type === 2 ? '打' : '减'}{availableCoupons[0].discount_amount}
+                {availableCoupons[0].type === 2 ? '折' : '元'}
               </Text>
               <Text style={styles.couponName}>{availableCoupons[0].name}</Text>
             </View>
             <View style={styles.couponRight}>
               <Text style={[styles.couponStatus, selectedCoupon && { color: '#ff6b35' }]}>
-                {selectedCoupon ? 'ѡ' : ''}
+                {selectedCoupon ? '已选' : '可选'}
               </Text>
-              <Ionicons name={selectedCoupon ? "checkmark-circle" : "ellipse-outline"} size={22} color="#ff6b35" />
+              <Icon name={selectedCoupon ? "checkmark-circle" : "ellipse-outline"} size={22} color="#ff6b35" />
             </View>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* ע */}
+      {/* 备注 */}
       <View style={styles.noteCard}>
-        <Text style={styles.cardTitle}>ע</Text>
+        <Text style={styles.cardTitle}>订单备注</Text>
         <TextInput
           style={styles.noteInput}
-          placeholder="ѡ̼ҵ"
+          placeholder="选填，可备注特殊要求"
           value={remark}
           onChangeText={setRemark}
           multiline
@@ -179,29 +190,29 @@ export default function OrderCreateScreen({ route, navigation }) {
         />
       </View>
 
-      {/* ϸ */}
+      {/* 费用明细 */}
       <View style={styles.feeCard}>
         <View style={styles.feeRow}>
-          <Text style={styles.feeLabel}>Ʒϼ</Text>
-          <Text style={styles.feeValue}>{totalAmount.toFixed(2)}</Text>
+          <Text style={styles.feeLabel}>商品小计</Text>
+          <Text style={styles.feeValue}>¥{totalAmount.toFixed(2)}</Text>
         </View>
         {discount > 0 && (
           <View style={styles.feeRow}>
-            <Text style={styles.feeLabel}>Żȯֿ</Text>
-            <Text style={[styles.feeValue, { color: '#ff6b35' }]}>-{discount.toFixed(2)}</Text>
+            <Text style={styles.feeLabel}>优惠券折扣</Text>
+            <Text style={[styles.feeValue, { color: '#ff6b35' }]}>-¥{discount.toFixed(2)}</Text>
           </View>
         )}
         <View style={styles.feeRow}>
-          <Text style={styles.feeLabel}>˷</Text>
-          <Text style={styles.feeValue}>˷</Text>
+          <Text style={styles.feeLabel}>运费</Text>
+          <Text style={styles.feeValue}>免运费</Text>
         </View>
         <View style={[styles.feeRow, styles.totalRow]}>
-          <Text style={styles.totalLabel}>Ӧܶ</Text>
-          <Text style={styles.totalAmount}>{finalAmount.toFixed(2)}</Text>
+          <Text style={styles.totalLabel}>应付总额</Text>
+          <Text style={styles.totalAmount}>¥{finalAmount.toFixed(2)}</Text>
         </View>
       </View>
 
-      {/* ύť */}
+      {/* 提交按钮 */}
       <View style={styles.submitArea}>
         <TouchableOpacity
           style={[styles.submitBtn, submitting && styles.submitBtnLoading]}
@@ -209,23 +220,12 @@ export default function OrderCreateScreen({ route, navigation }) {
           disabled={submitting}
         >
           <Text style={styles.submitText}>
-            {submitting ? 'ύ...' : ύ }
+            {submitting ? '提交中...' : '提交订单'}
           </Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
   );
-
-  function calcDiscount(coupon) {
-    if (!coupon) return;
-    if (coupon.type === 1) {
-      setDiscount(Math.min(coupon.discount_amount, totalAmount));
-    } else if (coupon.type === 2) {
-      setDiscount(totalAmount * (1 - coupon.discount_amount / 10));
-    } else {
-      setDiscount(coupon.discount_amount);
-    }
-  }
 }
 
 const styles = StyleSheet.create({
@@ -268,5 +268,3 @@ const styles = StyleSheet.create({
   submitBtnLoading: { opacity: 0.7 },
   submitText: { color: '#fff', fontSize: 17, fontWeight: '600' },
 });
-
-

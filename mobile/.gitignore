@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# React Native
+.expo/
+
+# Native builds
+ios/build/
+android/build/
+android/.gradle/
+android/app/build/
+
+# Misc
+.DS_Store
+*.log
+.env
+*.keystore
+!debug.keystore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing
+coverage/
+
+# Temporary
+tmp/
+temp/

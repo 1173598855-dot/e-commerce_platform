@@ -85,6 +85,8 @@ CREATE TABLE IF NOT EXISTS products (
   spec VARCHAR(255) DEFAULT '',
   image VARCHAR(255) DEFAULT '',
   sales INT DEFAULT 0,
+  rating DECIMAL(3,2) DEFAULT 5.00,
+  is_promotion TINYINT DEFAULT 0,
   status TINYINT DEFAULT 1 COMMENT '1上架 0下架',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -147,13 +149,14 @@ CREATE TABLE IF NOT EXISTS cart_items (
 CREATE TABLE IF NOT EXISTS addresses (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
-  name VARCHAR(50) NOT NULL,
-  phone VARCHAR(20) NOT NULL,
+  receiver_name VARCHAR(50) NOT NULL,
+  receiver_phone VARCHAR(20) NOT NULL,
   province VARCHAR(50) NOT NULL,
   city VARCHAR(50) NOT NULL,
   district VARCHAR(50) NOT NULL,
-  detail VARCHAR(255) NOT NULL,
+  detail_address VARCHAR(255) NOT NULL,
   is_default TINYINT DEFAULT 0,
+  status TINYINT DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id),
   INDEX idx_user (user_id)
@@ -165,8 +168,13 @@ CREATE TABLE IF NOT EXISTS orders (
   order_no VARCHAR(50) NOT NULL UNIQUE,
   user_id INT NOT NULL,
   total_amount DECIMAL(10,2) NOT NULL,
+  actual_amount DECIMAL(10,2) DEFAULT NULL,
   status VARCHAR(20) DEFAULT 'pending' COMMENT 'pending/paid/shipped/completed/cancelled',
+  shipping_address JSON DEFAULT NULL COMMENT '收货地址快照',
   address_snapshot JSON DEFAULT NULL COMMENT '下单时地址快照',
+  payment_method VARCHAR(50) DEFAULT NULL,
+  paid_at DATETIME DEFAULT NULL,
+  completed_at DATETIME DEFAULT NULL,
   remark VARCHAR(255) DEFAULT '',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -184,6 +192,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   product_image VARCHAR(255) DEFAULT '',
   price DECIMAL(10,2) NOT NULL,
   quantity INT NOT NULL,
+  subtotal DECIMAL(10,2) NOT NULL DEFAULT 0,
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -209,10 +218,17 @@ CREATE TABLE IF NOT EXISTS coupons (
   type VARCHAR(20) NOT NULL COMMENT 'fixed/percent',
   value DECIMAL(10,2) NOT NULL COMMENT '固定金额或折扣百分比',
   min_amount DECIMAL(10,2) DEFAULT 0 COMMENT '最低消费',
+  condition_amount DECIMAL(10,2) DEFAULT 0,
+  discount_amount DECIMAL(10,2) DEFAULT 0,
   start_time DATETIME NOT NULL,
   end_time DATETIME NOT NULL,
+  valid_start DATETIME NOT NULL,
+  valid_end DATETIME NOT NULL,
   total INT DEFAULT 0 COMMENT '总发放量',
+  total_count INT DEFAULT 0,
   used INT DEFAULT 0 COMMENT '已使用量',
+  issued_count INT DEFAULT 0,
+  per_user_limit INT DEFAULT 1,
   status TINYINT DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -223,7 +239,9 @@ CREATE TABLE IF NOT EXISTS user_coupons (
   user_id INT NOT NULL,
   coupon_id INT NOT NULL,
   is_used TINYINT DEFAULT 0,
+  status TINYINT DEFAULT 1 COMMENT '1可用 2已用 3过期',
   used_at DATETIME DEFAULT NULL,
+  expires_at DATETIME DEFAULT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (coupon_id) REFERENCES coupons(id)
@@ -320,7 +338,49 @@ CREATE TABLE IF NOT EXISTS hot_searches (
   id INT AUTO_INCREMENT PRIMARY KEY,
   keyword VARCHAR(100) NOT NULL,
   search_count INT DEFAULT 1,
+  is_hot TINYINT DEFAULT 0,
+  sort_order INT DEFAULT 0,
   status TINYINT DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_keyword (keyword)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 收藏表
+CREATE TABLE IF NOT EXISTS favorites (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  product_id INT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_user_product_favorite (user_id, product_id),
+  INDEX idx_user (user_id),
+  INDEX idx_product (product_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 物流追踪表
+CREATE TABLE IF NOT EXISTS logistics_tracking (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  order_id INT NOT NULL,
+  tracking_company VARCHAR(100) DEFAULT '',
+  tracking_number VARCHAR(100) NOT NULL,
+  status VARCHAR(50) DEFAULT 'pending',
+  shipped_at DATETIME DEFAULT NULL,
+  delivered_at DATETIME DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_order (order_id),
+  INDEX idx_tracking_number (tracking_number),
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS logistics_traces (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  tracking_id INT NOT NULL,
+  content VARCHAR(255) NOT NULL,
+  location VARCHAR(200) DEFAULT '',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_tracking (tracking_id),
+  FOREIGN KEY (tracking_id) REFERENCES logistics_tracking(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

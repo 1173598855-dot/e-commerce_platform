@@ -1,4 +1,4 @@
-﻿# RN App 打包指南
+# RN App 打包指南
 
 ## 环境准备
 
@@ -20,112 +20,44 @@ cp .env.staging .env
 cp .env.production .env
 ```
 
-## 打包 APK（调试）
+## 打包和验证
 
 ```bash
 cd frontend
-npx react-native run-android
+npm run bundle:android
 ```
 
-## 打包 AAB（上架 Google Play）
+```bash
+cd backend/microservices
+npm run smoke
+```
+
+```bash
+cd .
+docker compose config
+```
+
+## Android Release 签名
+
+1. 复制模板：
+```bash
+cp android/keystore.properties.example android/keystore.properties
+```
+
+2. 填写真实签名信息，不要提交 `android/keystore.properties`
+
+3. Release 构建会读取 `android/keystore.properties`，未配置时仍可保持本地开发构建可用
+
+## Release 构建
 
 ```bash
 cd frontend/android
-
-# Release AAB
 ./gradlew bundleRelease
-
-# 产物路径：
-# android/app/build/outputs/bundle/release/app-release.aab
-```
-
-## 打包 APK（直接安装）
-
-```bash
-cd frontend/android
-
-# Release APK
 ./gradlew assembleRelease
-
-# 产物路径：
-# android/app/build/outputs/apk/release/app-release.apk
 ```
 
-## 签名配置
+## 说明
 
-### 1. 生成签名密钥
-```bash
-keytool -genkeypair -v -storetype PKCS12 -keystore my-release-key.keystore -alias my-key-alias -keyalg RSA -keysize 2048 -validity 10000
-```
-
-### 2. 配置 gradle
-编辑 `android/gradle.properties`：
-```
-MYAPP_RELEASE_STORE_FILE=my-release-key.keystore
-MYAPP_RELEASE_KEY_ALIAS=my-key-alias
-MYAPP_RELEASE_STORE_PASSWORD=*****
-MYAPP_RELEASE_KEY_PASSWORD=*****
-```
-
-### 3. 配置签名
-编辑 `android/app/build.gradle`：
-```gradle
-android {
-    signingConfigs {
-        release {
-            storeFile file(MYAPP_RELEASE_STORE_FILE)
-            storePassword MYAPP_RELEASE_STORE_PASSWORD
-            keyAlias MYAPP_RELEASE_KEY_ALIAS
-            keyPassword MYAPP_RELEASE_KEY_PASSWORD
-        }
-    }
-    buildTypes {
-        release {
-            signingConfig signingConfigs.release
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-}
-```
-
-## 替换图标
-
-### 必须替换的图标
-| 尺寸 | 路径 | 用途 |
-|------|------|------|
-| 48x48 | `android/app/src/main/res/mipmap-mdpi/ic_launcher.png` | 启动器图标 |
-| 72x72 | `android/app/src/main/res/mipmap-hdpi/ic_launcher.png` | 启动器图标 |
-| 96x96 | `android/app/src/main/res/mipmap-xhdpi/ic_launcher.png` | 启动器图标 |
-| 144x144 | `android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png` | 启动器图标 |
-| 192x192 | `android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png` | 启动器图标 |
-
-### 推荐工具
-- [App Icon Generator](https://www.appicon.co/) - 上传一张 1024x1024 生成全套
-- [RN Icon Generator](https://romannurik.github.io/AndroidAssetStudio/icons-launcher.html)
-
-## 替换启动屏
-
-编辑 `android/app/src/main/res/drawable/splash_screen.xml`：
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@color/splash_background" />
-    <item android:gravity="center" android:width="200dp" android:height="200dp">
-        <bitmap android:src="@drawable/splash_logo" android:gravity="center" />
-    </item>
-</layer-list>
-```
-
-## 常用命令
-
-```bash
-# 清理构建
-cd android && ./gradlew clean
-
-# 安装到设备
-adb install app/build/outputs/apk/release/app-release.apk
-
-# 查看日志
-adb logcat | grep -E "ReactNative|JSLog"
-```
+- 生产环境 API 地址统一来自 `frontend/.env.production`
+- `frontend/android/.gitignore` 已忽略签名文件
+- `frontend/android/app/src/main/AndroidManifest.xml` 已收紧为正式包最小权限

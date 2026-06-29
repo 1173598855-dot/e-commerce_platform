@@ -1,21 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  Alert, ActivityIndicator, Image
+  Alert, ActivityIndicator, Image, FlatList
 } from 'react-native';
-import { Ionicons } from 'react-native-vector-icons';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { productApi, cartApi, favoriteApi } from '../api';
 import SkuSelector from '../components/SkuSelector';
+import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme/designSystem';
+import { ContainerStyles, TextStyles, ButtonStyles, CardStyles, TagStyles } from '../theme/styles';
 
+/**
+ * 商品详情页 - 企业级实现
+ * 遵循 UI 设计方案 v2.0.0
+ * 特性：性能优化、可访问性、用户体验
+ */
 export default function ProductDetailScreen({ route, navigation }) {
   const { id } = route.params;
   const [product, setProduct] = useState(null);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showSku, setShowSku] = useState(false);
   const [selectedSku, setSelectedSku] = useState(null);
   const [selectedQty, setSelectedQty] = useState(1);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     loadDetail();
@@ -24,11 +33,16 @@ export default function ProductDetailScreen({ route, navigation }) {
 
   const loadDetail = async () => {
     try {
-      const res = await productApi.getDetail(id);
-      setProduct(res.data);
-      setLoading(false);
+      setLoading(true);
+      const [productRes, reviewsRes] = await Promise.all([
+        productApi.getDetail(id),
+        productApi.getReviews(id, { page: 1, pageSize: 5 }),
+      ]);
+      setProduct(productRes.data);
+      setReviews(reviewsRes.data.list || []);
     } catch (err) {
-      Alert.alert('ʧ', err.message);
+      Alert.alert('错误', err.message || '加载失败');
+    } finally {
       setLoading(false);
     }
   };
@@ -47,14 +61,14 @@ export default function ProductDetailScreen({ route, navigation }) {
       if (isFavorite) {
         await favoriteApi.remove({ product_id: id });
         setIsFavorite(false);
-        Alert.alert('ʾ', 'ȡղ');
+        Alert.alert('成功', '已取消收藏');
       } else {
         await favoriteApi.add({ product_id: id });
         setIsFavorite(true);
-        Alert.alert('ʾ', 'ղ');
+        Alert.alert('成功', '已添加收藏');
       }
     } catch (err) {
-      Alert.alert('ʧ', err.message);
+      Alert.alert('错误', err.message || '操作失败');
     }
   };
 
@@ -74,12 +88,12 @@ export default function ProductDetailScreen({ route, navigation }) {
         quantity: selectedQty,
         name: product.name,
         price: sku.price || product.price,
-        image: product.image,
+        image: product.images?.[0] || product.image,
       };
       await cartApi.addToCart(data);
-      Alert.alert('ɹ', 'Ѽ빺ﳵ');
+      Alert.alert('成功', '已添加到购物车');
     } catch (err) {
-      Alert.alert('ʧ', err.message);
+      Alert.alert('错误', err.message || '添加失败');
     }
   };
 
@@ -93,7 +107,7 @@ export default function ProductDetailScreen({ route, navigation }) {
         quantity: selectedQty,
         name: product.name,
         price: sku.price || product.price,
-        image: product.image,
+        image: product.images?.[0] || product.image,
       }],
     });
   };
@@ -101,7 +115,8 @@ export default function ProductDetailScreen({ route, navigation }) {
   if (loading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#ff6b35" />
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={styles.loadingText}>正在加载...</Text>
       </View>
     );
   }
@@ -112,79 +127,216 @@ export default function ProductDetailScreen({ route, navigation }) {
   const displayQty = selectedSku ? selectedQty : quantity;
 
   return (
-    <ScrollView style={styles.container}>
-      {/* ƷͼƬ */}
-      <View style={styles.imageArea}>
-        <Text style={styles.imagePlaceholder}>??</Text>
-      </View>
-
-      {/* Ϣ */}
-      <View style={styles.infoArea}>
-        <View style={styles.priceRow}>
-          <Text style={styles.price}>{displayPrice}</Text>
-          {product.original_price && (
-            <Text style={styles.originalPrice}>{product.original_price}</Text>
+    <View style={ContainerStyles.main}>
+      <ScrollView 
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        accessibilityLabel="商品详情页"
+      >
+        {/* 图片区域 - 使用设计系统 */}
+        <View style={styles.imageArea}>
+          {product.images && product.images.length > 0 ? (
+            <>
+              <FlatList
+                data={product.images}
+                keyExtractor={(item, index) => index.toString()}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={(e) => {
+                  const index = Math.round(e.nativeEvent.contentOffset.x / e.nativeEvent.layoutMeasurement.width);
+                  setCurrentImageIndex(index);
+                }}
+                renderItem={({ item }) => (
+                  <Image
+                    source={{ uri: item }}
+                    style={styles.productImage}
+                    resizeMode="cover"
+                  />
+                )}
+              />
+              {/* 图片指示器 */}
+              <View style={styles.imageIndicator}>
+                {product.images.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.indicatorDot,
+                      index === currentImageIndex && styles.indicatorDotActive,
+                    ]}
+                  />
+                ))}
+              </View>
+            </>
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Icon name="image-outline" size={80} color={Colors.gray400} />
+              <Text style={styles.imagePlaceholderText}>暂无图片</Text>
+            </View>
           )}
-          <Text style={styles.sales}> {product.sales || 0}</Text>
         </View>
-        <Text style={styles.name}>{product.name}</Text>
-        <View style={styles.tags}>
-          <View style={styles.tag}><Text style={styles.tagText}></Text></View>
-          <View style={styles.tag}><Text style={styles.tagText}>Ʒ</Text></View>
-          {product.brand && <View style={styles.tag}><Text style={styles.tagText}>{product.brand}</Text></View>}
+
+        {/* 信息区域 - 使用设计系统 */}
+        <View style={styles.infoArea}>
+          {/* 价格行 */}
+          <View style={styles.priceRow}>
+            <Text style={styles.price}>¥{displayPrice}</Text>
+            {product.original_price && (
+              <Text style={styles.originalPrice}>¥{product.original_price}</Text>
+            )}
+            <View style={styles.salesBadge}>
+              <Text style={styles.salesText}>已售 {product.sales || 0}</Text>
+            </View>
+          </View>
+
+          {/* 商品名称 */}
+          <Text style={styles.name}>{product.name}</Text>
+
+          {/* 标签 */}
+          <View style={styles.tags}>
+            <View style={styles.tag}>
+              <Text style={styles.tagText}>正品保证</Text>
+            </View>
+            <View style={styles.tag}>
+              <Text style={styles.tagText}>闪电发货</Text>
+            </View>
+            {product.brand && (
+              <View style={styles.tag}>
+                <Text style={styles.tagText}>{product.brand}</Text>
+              </View>
+            )}
+          </View>
+
+          {/* 评分 */}
+          {product.avg_rating > 0 && (
+            <View style={styles.ratingRow}>
+              <View style={styles.stars}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Icon
+                    key={star}
+                    name={star <= Math.round(product.avg_rating) ? 'star' : 'star-outline'}
+                    size={16}
+                    color="#ffc107"
+                  />
+                ))}
+              </View>
+              <Text style={styles.ratingText}>{product.avg_rating} 分</Text>
+              <Text style={styles.reviewCount}>({product.review_count || 0}条评价)</Text>
+            </View>
+          )}
         </View>
-      </View>
 
-      {/* SKUѡ */}
-      {(product.spec_options || product.skus) && (
-        <TouchableOpacity style={styles.skuCard} onPress={() => setShowSku(true)}>
-          <Text style={styles.skuLabel}></Text>
-          <Text style={styles.skuValue}>
-            {selectedSku ? JSON.stringify(selectedSku.spec || {}) : 'ѡ'}
-          </Text>
-          <Ionicons name="chevron-forward" size={20} color="#ccc" />
-        </TouchableOpacity>
-      )}
+        {/* SKU 选择器 */}
+        {(product.spec_options || product.skus) && (
+          <TouchableOpacity 
+            style={styles.skuCard} 
+            onPress={() => setShowSku(true)}
+            accessibilityLabel="选择规格"
+            accessibilityHint={selectedSku ? `已选择 ${JSON.stringify(selectedSku.spec || {})}` : '请选择规格'}
+          >
+            <Text style={styles.skuLabel}>规格</Text>
+            <Text style={styles.skuValue}>
+              {selectedSku ? JSON.stringify(selectedSku.spec || {}) : '请选择规格'}
+            </Text>
+            <Icon name="chevron-forward" size={20} color={Colors.gray400} />
+          </TouchableOpacity>
+        )}
 
-      {/*  */}
-      <View style={styles.specCard}>
-        <Text style={styles.cardTitle}></Text>
-        {product.brand && <SpecRow label="Ʒ" value={product.brand} />}
-        {product.category_name && <SpecRow label="" value={product.category_name} />}
-        <SpecRow label="" value={`${product.stock} `} />
-        {product.description && <SpecRow label="" value={product.description} />}
-      </View>
+        {/* 商品详情 */}
+        <View style={styles.specCard}>
+          <Text style={styles.cardTitle}>商品详情</Text>
+          {product.brand && <SpecRow label="品牌" value={product.brand} />}
+          {product.category_name && <SpecRow label="分类" value={product.category_name} />}
+          <SpecRow label="库存" value={`${product.stock} 件`} />
+          {product.description && <SpecRow label="描述" value={product.description} />}
+        </View>
 
-      {/* ײ */}
+        {/* 评价列表 */}
+        {reviews.length > 0 && (
+          <View style={styles.reviewsCard}>
+            <View style={styles.reviewsHeader}>
+              <Text style={styles.cardTitle}>用户评价 ({product.review_count || 0})</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Reviews', { productId: id })}>
+                <Text style={styles.seeMore}>查看全部 ›</Text>
+              </TouchableOpacity>
+            </View>
+            {reviews.map((review, index) => (
+              <View key={review.id || index} style={styles.reviewItem}>
+                <View style={styles.reviewHeader}>
+                  <Text style={styles.reviewUser}>{review.nickname || '匿名用户'}</Text>
+                  <View style={styles.reviewStars}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Icon
+                        key={star}
+                        name={star <= review.rating ? 'star' : 'star-outline'}
+                        size={12}
+                        color="#ffc107"
+                      />
+                    ))}
+                  </View>
+                </View>
+                <Text style={styles.reviewContent}>{review.content}</Text>
+                <Text style={styles.reviewTime}>{review.created_at}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+
+      {/* 底部操作栏 - 使用设计系统 */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.bottomItem} onPress={toggleFavorite}>
-          <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={24} color="#ff6b35" />
-          <Text style={styles.bottomItemText}>ղ</Text>
+        <TouchableOpacity 
+          style={styles.bottomItem} 
+          onPress={toggleFavorite}
+          accessibilityLabel={isFavorite ? '取消收藏' : '收藏'}
+        >
+          <Icon name={isFavorite ? 'heart' : 'heart-outline'} size={24} color={Colors.primary} />
+          <Text style={styles.bottomItemText}>{isFavorite ? '已收藏' : '收藏'}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.bottomItem} onPress={() => navigation.navigate('Reviews', { productId: id })}>
-          <Ionicons name="chatbubble-outline" size={24} color="#ff6b35" />
-          <Text style={styles.bottomItemText}></Text>
+        
+        <TouchableOpacity 
+          style={styles.bottomItem} 
+          onPress={() => navigation.navigate('Reviews', { productId: id })}
+          accessibilityLabel="查看评价"
+        >
+          <Icon name="chatbubble-outline" size={24} color={Colors.primary} />
+          <Text style={styles.bottomItemText}>评价</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.bottomItem} onPress={() => navigation.navigate('Cart')}>
-          <Ionicons name="cart-outline" size={24} color="#ff6b35" />
-          <Text style={styles.bottomItemText}>ﳵ</Text>
+        
+        <TouchableOpacity 
+          style={styles.bottomItem} 
+          onPress={() => navigation.navigate('Cart')}
+          accessibilityLabel="购物车"
+        >
+          <Icon name="cart-outline" size={24} color={Colors.primary} />
+          <Text style={styles.bottomItemText}>购物车</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.buyBtn} onPress={handleBuyNow}>
-          <Text style={styles.buyBtnText}></Text>
+        
+        <TouchableOpacity 
+          style={styles.cartBtn} 
+          onPress={handleAddToCart}
+          accessibilityLabel="加入购物车"
+        >
+          <Text style={styles.cartBtnText}>加入购物车</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.cartBtn} onPress={handleAddToCart}>
-          <Text style={styles.cartBtnText}>빺ﳵ</Text>
+        
+        <TouchableOpacity 
+          style={styles.buyBtn} 
+          onPress={handleBuyNow}
+          accessibilityLabel="立即购买"
+        >
+          <Text style={styles.buyBtnText}>立即购买</Text>
         </TouchableOpacity>
       </View>
 
-      {/* SKUѡ񵯴 */}
+      {/* SKU 选择器弹窗 */}
       <SkuSelector
         visible={showSku}
         productId={id}
         onClose={() => setShowSku(false)}
         onConfirm={handleSkuConfirm}
       />
-    </ScrollView>
+    </View>
   );
 }
 
@@ -198,34 +350,292 @@ function SpecRow({ label, value }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  loading: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
-  imageArea: { width: '100%', height: 350, backgroundColor: '#f9f9f9', justifyContent: 'center', alignItems: 'center' },
-  imagePlaceholder: { fontSize: 80 },
-  infoArea: { backgroundColor: '#fff', padding: 16, marginBottom: 8 },
-  priceRow: { flexDirection: 'row', alignItems: 'baseline' },
-  price: { fontSize: 28, fontWeight: 'bold', color: '#ff6b35' },
-  originalPrice: { fontSize: 15, color: '#999', textDecorationLine: 'line-through', marginLeft: 10 },
-  sales: { fontSize: 13, color: '#999', marginLeft: 'auto' },
-  name: { fontSize: 16, color: '#333', marginTop: 8, fontWeight: '500', lineHeight: 24 },
-  tags: { flexDirection: 'row', marginTop: 10, gap: 8 },
-  tag: { paddingHorizontal: 8, paddingVertical: 2, backgroundColor: '#fff3ed', borderRadius: 4 },
-  tagText: { fontSize: 12, color: '#ff6b35' },
-  skuCard: { backgroundColor: '#fff', padding: 16, marginBottom: 8, flexDirection: 'row', alignItems: 'center' },
-  skuLabel: { fontSize: 14, color: '#333', fontWeight: '500', width: 60 },
-  skuValue: { flex: 1, fontSize: 14, color: '#666' },
-  specCard: { backgroundColor: '#fff', padding: 16, marginBottom: 8 },
-  cardTitle: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 12 },
-  specRow: { flexDirection: 'row', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
-  specLabel: { width: 60, fontSize: 14, color: '#999' },
-  specValue: { flex: 1, fontSize: 14, color: '#333' },
-  bottomBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 10, borderTopWidth: 1, borderColor: '#eee' },
-  bottomItem: { alignItems: 'center', paddingHorizontal: 12 },
-  bottomItemText: { fontSize: 11, color: '#666', marginTop: 2 },
-  buyBtn: { paddingHorizontal: 18, paddingVertical: 12, backgroundColor: '#ff6b35', borderRadius: 6, marginLeft: 4 },
-  buyBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  cartBtn: { paddingHorizontal: 18, paddingVertical: 12, backgroundColor: '#ff9a6c', borderRadius: 6, marginLeft: 4 },
-  cartBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  // 主容器
+  container: {
+    flex: 1,
+    backgroundColor: Colors.backgroundSecondary,
+  },
+
+  // 加载状态
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+  },
+  loadingText: {
+    marginTop: Spacing[3],
+    fontSize: Typography.fontSize.base,
+    color: Colors.textSecondary,
+  },
+
+  // 图片区域
+  imageArea: {
+    width: '100%',
+    height: 350,
+    backgroundColor: Colors.gray50,
+    position: 'relative',
+  },
+  productImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imagePlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePlaceholderText: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textTertiary,
+    marginTop: Spacing[2],
+  },
+  imageIndicator: {
+    position: 'absolute',
+    bottom: Spacing[3],
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing[1],
+  },
+  indicatorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.white + '80',
+  },
+  indicatorDotActive: {
+    backgroundColor: Colors.white,
+    width: 12,
+  },
+
+  // 信息区域
+  infoArea: {
+    backgroundColor: Colors.white,
+    padding: Spacing[4],
+    marginBottom: Spacing[2],
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: Spacing[2],
+  },
+  price: {
+    fontSize: Typography.fontSize['4xl'],
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.primary,
+  },
+  originalPrice: {
+    fontSize: Typography.fontSize.base,
+    color: Colors.textTertiary,
+    textDecorationLine: 'line-through',
+    marginLeft: Spacing[3],
+  },
+  salesBadge: {
+    marginLeft: 'auto',
+    backgroundColor: Colors.primaryBackground,
+    paddingHorizontal: Spacing[2],
+    paddingVertical: Spacing[1],
+    borderRadius: BorderRadius.sm,
+  },
+  salesText: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.primary,
+    fontWeight: Typography.fontWeight.medium,
+  },
+  name: {
+    fontSize: Typography.fontSize.lg,
+    color: Colors.textPrimary,
+    marginTop: Spacing[2],
+    fontWeight: Typography.fontWeight.semibold,
+    lineHeight: Typography.fontSize.lg * Typography.lineHeight.relaxed,
+  },
+  tags: {
+    flexDirection: 'row',
+    marginTop: Spacing[3],
+    gap: Spacing[2],
+    flexWrap: 'wrap',
+  },
+  tag: {
+    paddingHorizontal: Spacing[2],
+    paddingVertical: Spacing[1],
+    backgroundColor: Colors.primaryBackground,
+    borderRadius: BorderRadius.sm,
+  },
+  tagText: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.primary,
+    fontWeight: Typography.fontWeight.medium,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing[3],
+    gap: Spacing[2],
+  },
+  stars: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  ratingText: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
+    fontWeight: Typography.fontWeight.medium,
+  },
+  reviewCount: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.textTertiary,
+  },
+
+  // SKU 卡片
+  skuCard: {
+    backgroundColor: Colors.white,
+    padding: Spacing[4],
+    marginBottom: Spacing[2],
+    flexDirection: 'row',
+    alignItems: 'center',
+    ...Shadows.sm,
+  },
+  skuLabel: {
+    fontSize: Typography.fontSize.base,
+    color: Colors.textPrimary,
+    fontWeight: Typography.fontWeight.medium,
+    width: 60,
+  },
+  skuValue: {
+    flex: 1,
+    fontSize: Typography.fontSize.base,
+    color: Colors.textSecondary,
+  },
+
+  // 商品详情卡片
+  specCard: {
+    backgroundColor: Colors.white,
+    padding: Spacing[4],
+    marginBottom: Spacing[2],
+    ...Shadows.sm,
+  },
+  cardTitle: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing[3],
+  },
+  specRow: {
+    flexDirection: 'row',
+    paddingVertical: Spacing[3],
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  specLabel: {
+    width: 80,
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textTertiary,
+  },
+  specValue: {
+    flex: 1,
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textPrimary,
+  },
+
+  // 评价卡片
+  reviewsCard: {
+    backgroundColor: Colors.white,
+    padding: Spacing[4],
+    marginBottom: Spacing[2],
+    ...Shadows.sm,
+  },
+  reviewsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing[3],
+  },
+  seeMore: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textTertiary,
+  },
+  reviewItem: {
+    paddingVertical: Spacing[3],
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing[2],
+    gap: Spacing[2],
+  },
+  reviewUser: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textPrimary,
+    fontWeight: Typography.fontWeight.medium,
+  },
+  reviewStars: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  reviewContent: {
+    fontSize: Typography.fontSize.base,
+    color: Colors.textPrimary,
+    lineHeight: Typography.fontSize.base * Typography.lineHeight.normal,
+    marginBottom: Spacing[2],
+  },
+  reviewTime: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.textTertiary,
+  },
+
+  // 底部操作栏
+  bottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    padding: Spacing[2],
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+    paddingBottom: Spacing[4], // 为 iPhone 底部留出空间
+  },
+  bottomItem: {
+    alignItems: 'center',
+    paddingHorizontal: Spacing[3],
+    paddingVertical: Spacing[1],
+  },
+  bottomItemText: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.textSecondary,
+    marginTop: Spacing[1],
+  },
+  cartBtn: {
+    flex: 1,
+    backgroundColor: Colors.secondary,
+    paddingVertical: Spacing[3],
+    paddingHorizontal: Spacing[4],
+    borderRadius: BorderRadius.base,
+    marginLeft: Spacing[2],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cartBtnText: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.white,
+  },
+  buyBtn: {
+    flex: 1,
+    backgroundColor: Colors.primary,
+    paddingVertical: Spacing[3],
+    paddingHorizontal: Spacing[4],
+    borderRadius: BorderRadius.base,
+    marginLeft: Spacing[2],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buyBtnText: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.white,
+  },
 });
-
-

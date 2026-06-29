@@ -1,5 +1,5 @@
-﻿import AsyncStorage from '@react-native-async-storage/async-storage';
-import { saveTokens, clearTokens } from '../api/request';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { saveTokens, clearTokens, loadTokens } from '../api/client';
 
 const USER_KEY = '@user_info';
 
@@ -9,6 +9,7 @@ class AuthStore {
       isLoggedIn: false,
       user: null,
       token: null,
+      refreshToken: null,
     };
     this.listeners = new Set();
     this._hydrated = false;
@@ -31,14 +32,15 @@ class AuthStore {
     this.listeners.forEach((listener) => listener(this.state));
   }
 
-  // 从本地存储恢复登录态
   async hydrate() {
     if (this._hydrated) return;
     try {
+      const { accessToken, refreshToken } = await loadTokens();
       const userJson = await AsyncStorage.getItem(USER_KEY);
-      if (userJson) {
+      if (userJson && accessToken) {
         const user = JSON.parse(userJson);
-        this.setState({ isLoggedIn: true, user, token: global.token });
+        global.userInfo = user;
+        this.setState({ isLoggedIn: true, user, token: accessToken, refreshToken });
       }
     } catch (e) {
       console.warn('[AuthStore] hydrate失败:', e.message);
@@ -46,25 +48,19 @@ class AuthStore {
     this._hydrated = true;
   }
 
-  // 登录成功后调用
   async login(user, token, refresh) {
-    global.token = token;
     global.userInfo = user;
     await saveTokens(token, refresh);
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
-    this.setState({ isLoggedIn: true, user, token });
+    this.setState({ isLoggedIn: true, user, token, refreshToken: refresh || null });
   }
 
-  // 登出
   async logout() {
-    global.token = null;
-    global.userInfo = null;
     await clearTokens();
     await AsyncStorage.removeItem(USER_KEY);
-    this.setState({ isLoggedIn: false, user: null, token: null });
+    this.setState({ isLoggedIn: false, user: null, token: null, refreshToken: null });
   }
 
-  // 更新用户信息
   async updateUser(updates) {
     const newUser = { ...this.state.user, ...updates };
     global.userInfo = newUser;

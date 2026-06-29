@@ -12,6 +12,7 @@
     volumes:
       - mysql_data:/var/lib/mysql
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
     command: --default-authentication-plugin=mysql_native_password
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-root}"]
@@ -41,7 +42,9 @@
 
   # ==================== 微服务 ====================
   auth-service:
-    build: ./backend/microservices/auth-service
+    build:
+      context: ./backend/microservices
+      dockerfile: auth-service/Dockerfile
     container_name: ecommerce-auth-service
     restart: always
     # 生产环境：内部端口不对外暴露（去掉 ports 映射）
@@ -67,7 +70,9 @@
       - ecommerce-net
 
   user-service:
-    build: ./backend/microservices/user-service
+    build:
+      context: ./backend/microservices
+      dockerfile: user-service/Dockerfile
     container_name: ecommerce-user-service
     restart: always
     environment:
@@ -77,6 +82,7 @@
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD:-root}
       DB_NAME: ecommerce
+      JWT_SECRET: ${JWT_SECRET:-ecommerce_jwt_secret_key_2024}
       NODE_ENV: production
     depends_on:
       mysql:
@@ -85,7 +91,9 @@
       - ecommerce-net
 
   product-service:
-    build: ./backend/microservices/product-service
+    build:
+      context: ./backend/microservices
+      dockerfile: product-service/Dockerfile
     container_name: ecommerce-product-service
     restart: always
     environment:
@@ -95,6 +103,7 @@
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD:-root}
       DB_NAME: ecommerce
+      JWT_SECRET: ${JWT_SECRET:-ecommerce_jwt_secret_key_2024}
       NODE_ENV: production
     depends_on:
       mysql:
@@ -103,7 +112,9 @@
       - ecommerce-net
 
   order-service:
-    build: ./backend/microservices/order-service
+    build:
+      context: ./backend/microservices
+      dockerfile: order-service/Dockerfile
     container_name: ecommerce-order-service
     restart: always
     environment:
@@ -113,6 +124,7 @@
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD:-root}
       DB_NAME: ecommerce
+      JWT_SECRET: ${JWT_SECRET:-ecommerce_jwt_secret_key_2024}
       NODE_ENV: production
     depends_on:
       mysql:
@@ -121,7 +133,9 @@
       - ecommerce-net
 
   mq-service:
-    build: ./backend/microservices/mq-service
+    build:
+      context: ./backend/microservices
+      dockerfile: mq-service/Dockerfile
     container_name: ecommerce-mq-service
     restart: always
     environment:
@@ -133,6 +147,7 @@
       DB_NAME: ecommerce
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-ecommerce_jwt_secret_key_2024}
       NODE_ENV: production
     depends_on:
       mysql:
@@ -143,7 +158,9 @@
       - ecommerce-net
 
   search-service:
-    build: ./backend/microservices/search-service
+    build:
+      context: ./backend/microservices
+      dockerfile: search-service/Dockerfile
     container_name: ecommerce-search-service
     restart: always
     environment:
@@ -153,6 +170,7 @@
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD:-root}
       DB_NAME: ecommerce
+      JWT_SECRET: ${JWT_SECRET:-ecommerce_jwt_secret_key_2024}
       NODE_ENV: production
     depends_on:
       mysql:
@@ -166,7 +184,7 @@
     container_name: ecommerce-gateway
     restart: always
     ports:
-      - "4000:4000"
+      - "4100:4000"
     environment:
       GATEWAY_PORT: 4000
       USER_SERVICE_HOST: user-service

@@ -1,0 +1,39 @@
+{
+  "name": "xiaoyi-mall",
+  "displayName": "小奕商城",
+  "version": "1.0.0",
+  "description": "小奕电商 - 企业级移动购物应用",
+  "author": "E_commerce Team",
+  "license": "MIT",
+  "private": true,
+  "expo": {
+    "name": "小奕商城",
+    "slug": "xiaoyi-mall",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icons/app-icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/icons/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.xiaoyi.mall"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icons/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.xiaoyi.mall"
+    },
+    "web": {
+      "favicon": "./assets/icons/favicon.png"
+    }
+  }
+}

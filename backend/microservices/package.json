@@ -12,6 +12,7 @@
     "start:search": "node search-service/index.js",
     "start:all": "concurrently \"npm run start:user\" \"npm run start:product\" \"npm run start:order\" \"npm run start:mq\" \"npm run start:search\" \"npm run start:gateway\"",
     "test": "jest"
+    ,"smoke": "powershell -ExecutionPolicy Bypass -File tests/api-smoke.ps1"
   },
   "dependencies": {
     "axios": "^1.6.5",

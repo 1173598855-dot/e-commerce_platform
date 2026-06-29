@@ -80,6 +80,7 @@ async function updateCartItem(req, res) {
   try {
     const { id } = req.params;
     const { quantity } = req.body;
+    const userId = req.user.userId;
 
     if (quantity < 1) {
       return sendError(res, '数量至少为1', 400);

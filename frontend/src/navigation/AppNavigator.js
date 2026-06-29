@@ -39,10 +39,10 @@ function MainTabs() {
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
-          if (route.name === "首页") iconName = focused ? "home" : "home-outline";
-          else if (route.name === "分类") iconName = focused ? "grid" : "grid-outline";
-          else if (route.name === "购物车") iconName = focused ? "cart" : "cart-outline";
-          else if (route.name === "我的") iconName = focused ? "person" : "person-outline";
+          if (route.name === "Home") iconName = focused ? "home" : "home-outline";
+          else if (route.name === "Category") iconName = focused ? "grid" : "grid-outline";
+          else if (route.name === "Cart") iconName = focused ? "cart" : "cart-outline";
+          else if (route.name === "Profile") iconName = focused ? "person" : "person-outline";
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: "#ff6b35",
@@ -51,10 +51,10 @@ function MainTabs() {
         tabBarStyle: { paddingBottom: 5, paddingTop: 5, height: 56 },
       })}
     >
-      <Tab.Screen name="首页" component={HomeScreen} />
-      <Tab.Screen name="分类" component={CategoryScreen} />
-      <Tab.Screen name="购物车" component={CartScreen} />
-      <Tab.Screen name="我的" component={ProfileScreen} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: "\u9996\u9875" }} />
+      <Tab.Screen name="Category" component={CategoryScreen} options={{ tabBarLabel: "\u5206\u7c7b" }} />
+      <Tab.Screen name="Cart" component={CartScreen} options={{ tabBarLabel: "\u8d2d\u7269\u8f66" }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: "\u6211\u7684" }} />
     </Tab.Navigator>
   );
 }
@@ -73,28 +73,26 @@ export default function AppNavigator({ initialRoute }) {
       ) : (
         <>
           <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
-          <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ title: "商品详情" }} />
-          <Stack.Screen name="OrderCreate" component={OrderCreateScreen} options={{ title: "确认订单" }} />
-          <Stack.Screen name="OrderList" component={OrderListScreen} options={{ title: "我的订单" }} />
-          <Stack.Screen name="Payment" component={PaymentScreen} options={{ title: "模拟支付" }} />
-          <Stack.Screen name="Search" component={SearchScreen} options={{ title: "搜索" }} />
-          <Stack.Screen name="Recommend" component={RecommendScreen} options={{ title: "猜你喜欢" }} />
-          <Stack.Screen name="AiChat" component={AiChatScreen} options={{ title: "AI客服" }} />
-          <Stack.Screen name="DataDashboard" component={DataDashboardScreen} options={{ title: "数据看板" }} />
-          <Stack.Screen name="Reviews" component={ReviewListScreen} options={{ title: "商品评价" }} />
-          <Stack.Screen name="Review" component={ReviewScreen} options={{ title: "写评价" }} />
-          <Stack.Screen name="Favorites" component={FavoriteScreen} options={{ title: "我的收藏" }} />
-          <Stack.Screen name="Addresses" component={AddressScreen} options={{ title: "收货地址" }} />
-          <Stack.Screen name="Coupons" component={CouponCenterScreen} options={{ title: "领券中心" }} />
-          <Stack.Screen name="MyCoupons" component={CouponScreen} options={{ title: "我的优惠券" }} />
-          <Stack.Screen name="Points" component={PointsScreen} options={{ title: "积分中心" }} />
-          <Stack.Screen name="Notifications" component={NotificationScreen} options={{ title: "消息通知" }} />
-          <Stack.Screen name="ChatRoom" component={ChatScreen} options={{ title: "聊天" }} />
-          <Stack.Screen name="Merchant" component={MerchantScreen} options={{ title: "商家后台" }} />
+          <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ title: "\u5546\u54c1\u8be6\u60c5" }} />
+          <Stack.Screen name="OrderCreate" component={OrderCreateScreen} options={{ title: "\u786e\u8ba4\u8ba2\u5355" }} />
+          <Stack.Screen name="OrderList" component={OrderListScreen} options={{ title: "\u6211\u7684\u8ba2\u5355" }} />
+          <Stack.Screen name="Payment" component={PaymentScreen} options={{ title: "\u6a21\u62df\u652f\u4ed8" }} />
+          <Stack.Screen name="Search" component={SearchScreen} options={{ title: "\u641c\u7d22" }} />
+          <Stack.Screen name="Recommend" component={RecommendScreen} options={{ title: "\u731c\u4f60\u559c\u6b22" }} />
+          <Stack.Screen name="AiChat" component={AiChatScreen} options={{ title: "AI\u5ba2\u670d" }} />
+          <Stack.Screen name="DataDashboard" component={DataDashboardScreen} options={{ title: "\u6570\u636e\u770b\u677f" }} />
+          <Stack.Screen name="Reviews" component={ReviewListScreen} options={{ title: "\u5546\u54c1\u8bc4\u4ef7" }} />
+          <Stack.Screen name="Review" component={ReviewScreen} options={{ title: "\u5199\u8bc4\u4ef7" }} />
+          <Stack.Screen name="Favorites" component={FavoriteScreen} options={{ title: "\u6211\u7684\u6536\u85cf" }} />
+          <Stack.Screen name="Addresses" component={AddressScreen} options={{ title: "\u6536\u8d27\u5730\u5740" }} />
+          <Stack.Screen name="Coupons" component={CouponCenterScreen} options={{ title: "\u9886\u5238\u4e2d\u5fc3" }} />
+          <Stack.Screen name="MyCoupons" component={CouponScreen} options={{ title: "\u6211\u7684\u4f18\u60e0\u5238" }} />
+          <Stack.Screen name="Points" component={PointsScreen} options={{ title: "\u79ef\u5206\u4e2d\u5fc3" }} />
+          <Stack.Screen name="Notifications" component={NotificationScreen} options={{ title: "\u6d88\u606f\u901a\u77e5" }} />
+          <Stack.Screen name="ChatRoom" component={ChatScreen} options={{ title: "\u804a\u5929" }} />
+          <Stack.Screen name="Merchant" component={MerchantScreen} options={{ title: "\u5546\u5bb6\u540e\u53f0" }} />
         </>
       )}
     </Stack.Navigator>
   );
 }
-
-

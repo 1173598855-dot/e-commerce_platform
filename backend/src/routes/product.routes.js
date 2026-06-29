@@ -2,6 +2,7 @@
 const router = express.Router();
 const productController = require('../controllers/product.controller');
 const { authenticateToken } = require('../middleware/auth.middleware');
+const { requireAdminSimple } = require('../middleware/admin.middleware');
 const multer = require('multer');
 const path = require('path');
 
@@ -19,9 +20,9 @@ router.get('/', productController.getProductList);
 router.get('/hot', productController.getHotProducts);
 router.get('/:id', productController.getProductDetail);
 
-// 管理员路由
-router.post('/', authenticateToken, upload.array('images', 5), productController.createProduct);
-router.put('/:id', authenticateToken, productController.updateProduct);
-router.delete('/:id', authenticateToken, productController.deleteProduct);
+// 管理员路由 - 需要登录和管理员权限
+router.post('/', authenticateToken, requireAdminSimple, upload.array('images', 5), productController.createProduct);
+router.put('/:id', authenticateToken, requireAdminSimple, productController.updateProduct);
+router.delete('/:id', authenticateToken, requireAdminSimple, productController.deleteProduct);
 
 module.exports = router;

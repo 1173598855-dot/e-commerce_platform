@@ -1,6 +1,7 @@
 ﻿const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const path = require('path');
 require('dotenv').config();
 
 const { mysqlPool } = require('./config/database');
@@ -33,7 +34,7 @@ app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -58,8 +59,36 @@ app.use('/api/logistics', logisticsRoutes);
 app.use('/api/videos', videoRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), mysql: 'connected' });
+app.get('/api/health', async (req, res) => {
+  const healthInfo = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    mysql: 'disconnected',
+    redis: 'disconnected'
+  };
+
+  // Check MySQL connection
+  try {
+    await mysqlPool.execute('SELECT 1');
+    healthInfo.mysql = 'connected';
+  } catch (err) {
+    healthInfo.mysql = 'disconnected';
+    healthInfo.status = 'degraded';
+  }
+
+  // Check Redis connection (if available)
+  try {
+    const redis = require('./config/redis');
+    if (redis.getRedisClient()) {
+      await redis.getRedisClient().ping();
+      healthInfo.redis = 'connected';
+    }
+  } catch (err) {
+    healthInfo.redis = 'disconnected';
+  }
+
+  const httpStatus = healthInfo.status === 'ok' ? 200 : 503;
+  res.status(httpStatus).json(healthInfo);
 });
 
 // Error handler

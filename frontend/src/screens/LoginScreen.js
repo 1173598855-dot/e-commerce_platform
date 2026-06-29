@@ -57,9 +57,9 @@ export default function LoginScreen({ navigation }) {
         result = await authApi.smsLogin({ phone, code });
       }
 
-      global.token = result.data.token;
-      global.userInfo = result.data.user;
-      authStore.setState({ isLoggedIn: true, user: result.data.user, token: result.data.token });
+      const token = result.data.accessToken || result.data.token;
+      const refreshToken = result.data.refreshToken;
+      await authStore.login(result.data.user, token, refreshToken);
 
       Alert.alert('登录成功', `欢迎，${result.data.user.nickname}`);
       navigation.replace('Main');
