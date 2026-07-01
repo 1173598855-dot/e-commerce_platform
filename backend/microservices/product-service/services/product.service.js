@@ -1,4 +1,15 @@
 const mysql = require('mysql2/promise');
+const { resolveAssetList, resolveAssetUrl } = require('../../shared/asset-url');
+
+function resolveProductAssets(products) {
+  if (!Array.isArray(products)) return;
+  products.forEach((product) => {
+    product.image = resolveAssetUrl(product.image);
+    product.product_image = resolveAssetUrl(product.product_image);
+    product.avatar = resolveAssetUrl(product.avatar);
+    product.images = resolveAssetList(product.images);
+  });
+}
 
 class ProductService {
   constructor() {
@@ -29,6 +40,7 @@ class ProductService {
       'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE ' + where + ' ORDER BY p.created_at DESC LIMIT ? OFFSET ?',
       [...params, Number(pageSize), Number(offset)]
     );
+    resolveProductAssets(products);
     const [[{ count }]] = await this.pool.query('SELECT COUNT(*) as count FROM products p WHERE ' + where, params);
     return this.formatList(products, page, pageSize, count);
   }
@@ -38,6 +50,7 @@ class ProductService {
     const [products] = await this.pool.query(
       'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.status = 1 ORDER BY p.sales DESC LIMIT ?', [Number(limit)]
     );
+    resolveProductAssets(products);
     return { list: products };
   }
 
@@ -92,6 +105,8 @@ class ProductService {
       );
       recommendedProducts = [...recommendedProducts, ...hotProducts];
     }
+
+    resolveProductAssets(recommendedProducts);
 
     return { list: recommendedProducts, type: userId > 0 ? 'personalized' : 'hot' };
   }
@@ -183,10 +198,11 @@ class ProductService {
     );
     if (products.length === 0) throw Object.assign(new Error('Not found'), { httpStatus: 404 });
     const product = products[0];
+    resolveProductAssets([product]);
     const [skus] = await this.pool.query('SELECT * FROM product_skus WHERE product_id = ? AND status = 1', [id]);
     product.skus = skus;
     const [images] = await this.pool.query('SELECT image_url FROM product_images WHERE product_id = ? ORDER BY sort_order', [id]);
-    product.images = images.map((i) => i.image_url);
+    product.images = resolveAssetList(images.map((i) => i.image_url));
     const [[avg]] = await this.pool.query('SELECT AVG(rating) as avg_rating, COUNT(*) as total FROM reviews WHERE product_id = ?', [id]);
     product.avg_rating = avg.avg_rating ? parseFloat(avg.avg_rating).toFixed(1) : 0;
     product.review_count = avg.total;
@@ -205,6 +221,9 @@ class ProductService {
       'SELECT r.*, u.nickname, u.avatar FROM reviews r LEFT JOIN users u ON r.user_id = u.id WHERE ' + where + ' ORDER BY r.created_at DESC LIMIT ? OFFSET ?',
       [...params, Number(pageSize), Number(offset)]
     );
+    reviews.forEach((review) => {
+      review.avatar = resolveAssetUrl(review.avatar);
+    });
     const [[{ count }]] = await this.pool.query('SELECT COUNT(*) as count FROM reviews r WHERE ' + where, params);
     const [[avg]] = await this.pool.query('SELECT AVG(rating) as avg_rating FROM reviews WHERE product_id = ?', [id]);
     const [dist] = await this.pool.query('SELECT rating, COUNT(*) as cnt FROM reviews WHERE product_id = ? GROUP BY rating', [id]);
@@ -221,6 +240,9 @@ class ProductService {
       'SELECT r.*, p.name as product_name, p.image as product_image FROM reviews r LEFT JOIN products p ON r.product_id = p.id WHERE r.user_id = ? ORDER BY r.created_at DESC LIMIT ? OFFSET ?',
       [userId, pageSize, offset]
     );
+    reviews.forEach((review) => {
+      review.product_image = resolveAssetUrl(review.product_image);
+    });
     const [[{ count }]] = await this.pool.query('SELECT COUNT(*) as count FROM reviews WHERE user_id = ?', [userId]);
     return { list: reviews, pagination: { page, pageSize, total: count } };
   }
@@ -264,10 +286,11 @@ class ProductService {
   }
 
   formatList(products, page, pageSize, total) {
+    resolveProductAssets(products);
     return { list: products, pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) } };
   }
 }
 
 const productService = new ProductService();
 
-module.exports = { productService, formatProductList: ProductService.prototype.formatList };
+module.exports = { productService, formatProductList: ProductService.prototype.formatList, resolveProductAssets };

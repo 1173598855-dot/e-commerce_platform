@@ -3,7 +3,7 @@ import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl
 } from "react-native";
 import { Ionicons } from "react-native-vector-icons";
-import { aiApi, productApi } from "../api";
+import { aiApi } from "../api";
 
 export default function RecommendScreen({ navigation }) {
   const [products, setProducts] = useState([]);

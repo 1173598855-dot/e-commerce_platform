@@ -1,11 +1,26 @@
 ﻿const express = require("express");
 const http = require("http");
 const jwt = require("jsonwebtoken");
+const redis = require("redis");
 const helmet = require("helmet");
 const cors = require("cors");
 const { v4: uuidv4 } = require("uuid");
 const { getForwardPath } = require("./route-utils");
+const {
+  buildGatewayRedisClientOptions,
+  createMemoryRateLimitStore,
+  createRateLimiter,
+  createRedisRateLimitStore,
+} = require("./rate-limit");
+let createLogger;
+try {
+  ({ createLogger } = require("../shared/logger"));
+} catch (err) {
+  ({ createLogger } = require("./shared/logger"));
+}
 require("dotenv").config();
+
+const logger = createLogger({ service: "gateway" });
 
 const app = express();
 
@@ -62,46 +77,70 @@ function respondError(res, httpStatus, code, message) {
   });
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || "ecommerce_jwt_secret_key_2024";
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is required");
+}
 
 // ==================== 统一日志 ====================
 app.use((req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
     const duration = Date.now() - start;
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${duration}ms) [requestId=${req.requestId}]`);
+    logger.info("request completed", {
+      requestId: req.requestId,
+      method: req.method,
+      path: req.originalUrl,
+      statusCode: res.statusCode,
+      durationMs: duration,
+      ip: req.ip || req.connection.remoteAddress,
+    });
   });
   next();
 });
 
 // ==================== 限流 ====================
-const rateLimitStore = new Map();
 const RATE_LIMIT_WINDOW = 60 * 1000;
 const RATE_LIMIT_MAX = 100;
+let redisRateLimitClient = null;
+const memoryRateLimitStore = createMemoryRateLimitStore({ windowMs: RATE_LIMIT_WINDOW });
+let activeRateLimitStore = memoryRateLimitStore;
+const rateLimitStore = {
+  increment(clientId) {
+    return activeRateLimitStore.increment(clientId);
+  },
+};
 
-function rateLimiter(req, res, next) {
-  const ip = req.ip || req.connection.remoteAddress;
-  const now = Date.now();
-  if (!rateLimitStore.has(ip)) { rateLimitStore.set(ip, []); }
-  const timestamps = rateLimitStore.get(ip).filter((t) => t > now - RATE_LIMIT_WINDOW);
-  timestamps.push(now);
-  rateLimitStore.set(ip, timestamps);
-  res.setHeader("X-RateLimit-Limit", RATE_LIMIT_MAX);
-  res.setHeader("X-RateLimit-Remaining", Math.max(0, RATE_LIMIT_MAX - timestamps.length));
-  if (timestamps.length > RATE_LIMIT_MAX) {
-    return respondError(res, 429, 50003, "请求过于频繁，请稍后再试");
-  }
-  next();
-}
+const rateLimiter = createRateLimiter({
+  store: rateLimitStore,
+  limit: RATE_LIMIT_MAX,
+  windowMs: RATE_LIMIT_WINDOW,
+  respondError,
+  logger,
+});
 app.use(rateLimiter);
 
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, timestamps] of rateLimitStore) {
-    const valid = timestamps.filter((t) => t > now - RATE_LIMIT_WINDOW);
-    if (valid.length === 0) rateLimitStore.delete(ip);
-    else rateLimitStore.set(ip, valid);
+async function initRedisRateLimiter() {
+  try {
+    redisRateLimitClient = redis.createClient(buildGatewayRedisClientOptions());
+    redisRateLimitClient.on("error", (err) => logger.warn("gateway redis error", { error: err.message }));
+    await redisRateLimitClient.connect();
+    activeRateLimitStore = createRedisRateLimitStore(redisRateLimitClient, {
+      windowMs: RATE_LIMIT_WINDOW,
+      keyPrefix: "gateway-rate-limit",
+    });
+    logger.info("gateway rate limiter using redis");
+  } catch (err) {
+    logger.warn("gateway redis rate limiter unavailable, using memory fallback", { error: err.message });
+    activeRateLimitStore = memoryRateLimitStore;
   }
+}
+
+initRedisRateLimiter();
+
+setInterval(() => {
+  memoryRateLimitStore.cleanup();
 }, 5 * 60 * 1000);
 
 // ==================== JWT 鉴权中间件 ====================
@@ -132,7 +171,14 @@ const SERVICES = {
 function proxyRequest(req, res, targetHost, targetPort, forwardPath) {
   const body = req.body ? JSON.stringify(req.body) : "";
 
-  console.log(`[PROXY] ${req.method} ${req.originalUrl} -> ${targetHost}:${targetPort}${forwardPath}`);
+  logger.info("proxy request", {
+    requestId: req.requestId,
+    method: req.method,
+    path: req.originalUrl,
+    targetHost,
+    targetPort,
+    forwardPath,
+  });
 
   const forwardHeaders = {};
   for (const [key, value] of Object.entries(req.headers)) {
@@ -166,7 +212,12 @@ function proxyRequest(req, res, targetHost, targetPort, forwardPath) {
   });
 
   proxyReq.on("error", (err) => {
-    console.error(`[PROXY ERROR] ${targetHost}:${targetPort} -> ${err.message}`);
+    logger.error("proxy request failed", {
+      requestId: req.requestId,
+      targetHost,
+      targetPort,
+      error: err.message,
+    });
     if (!res.headersSent) {
       respondError(res, 502, 502, "服务暂时不可用: " + err.message);
     }
@@ -292,23 +343,20 @@ app.use((req, res) => {
 
 // 全局错误处理
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error("unhandled gateway error", { requestId: req.requestId, error: err.message, stack: err.stack });
   respondError(res, err.status || 500, 500, err.message || "服务器内部错误");
 });
 
 const PORT = process.env.GATEWAY_PORT || 4000;
 const server = app.listen(PORT, () => {
-  console.log(`\n========================================`);
-  console.log(`  API Gateway started on port ${PORT}`);
-  console.log(`========================================`);
-  Object.entries(SERVICES).forEach(([name, svc]) => {
-    console.log(`  /api/${name} -> localhost:${svc.port}`);
-  });
-  console.log(`========================================\n`);
+  logger.info("api gateway started", { port: Number(PORT), services: SERVICES });
 });
 
 process.on("SIGTERM", () => {
-  console.log("Gateway shutting down...");
+  logger.info("gateway shutting down");
+  if (redisRateLimitClient) {
+    redisRateLimitClient.quit().catch((err) => logger.warn("gateway redis quit failed", { error: err.message }));
+  }
   server.close(() => process.exit(0));
 });
 

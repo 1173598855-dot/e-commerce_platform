@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  RefreshControl, ScrollView, TextInput, Image, ActivityIndicator
+  RefreshControl, TextInput, Image, ActivityIndicator
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { productApi, categoryApi } from '../api';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme/designSystem';
-import { ContainerStyles, TextStyles, NavigationStyles, CardStyles } from '../theme/styles';
+import { ContainerStyles } from '../theme/styles';
 
 /**
  * 首页组件 - 企业级实现

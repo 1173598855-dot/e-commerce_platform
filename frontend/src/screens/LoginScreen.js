@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Alert, Image
+  KeyboardAvoidingView, Platform, ScrollView, Alert
 } from 'react-native';
 import { authApi } from '../api';
 import { authStore } from '../store/authStore';

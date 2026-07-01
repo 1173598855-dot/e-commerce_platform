@@ -12,4 +12,7 @@ export const authApi = {
   refresh: (data) => api.post('/auth/refresh', data),
   verify: (data) => api.post('/auth/verify', data),
   logout: () => api.post('/auth/logout'),
+  listRolePermissions: (role) => api.get('/auth/permissions/roles', { params: { role } }),
+  updateRolePermissions: (role, permissions) => api.put(`/auth/permissions/roles/${role}`, { permissions }),
+  listPermissionAuditLogs: (params) => api.get('/auth/permissions/audits', { params }),
 };

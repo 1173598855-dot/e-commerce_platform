@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
   nickname VARCHAR(50) NOT NULL,
   avatar VARCHAR(255) DEFAULT '',
   status TINYINT DEFAULT 1 COMMENT '1正常 0冻结',
+  role VARCHAR(20) DEFAULT 'customer' COMMENT 'customer/merchant/admin',
   points INT DEFAULT 0 COMMENT '用户积分',
   last_login_time DATETIME DEFAULT NULL,
   last_login_ip VARCHAR(50) DEFAULT NULL COMMENT '上次登录IP',
@@ -26,6 +27,7 @@ CREATE TABLE IF NOT EXISTS users (
   INDEX idx_wechat (wechat_openid),
   INDEX idx_wechat_unionid (wechat_unionid),
   INDEX idx_qq (qq_openid),
+  INDEX idx_user_role (role),
   INDEX idx_status_desc (status_desc),
   INDEX idx_register_source (register_source)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -69,6 +71,71 @@ CREATE TABLE IF NOT EXISTS merchants (
   total_sales INT DEFAULT 0 COMMENT '总销量',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS merchant_users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  merchant_id INT NOT NULL,
+  user_id INT NOT NULL,
+  role VARCHAR(20) DEFAULT 'owner' COMMENT 'owner/operator/customer_service/finance',
+  status TINYINT DEFAULT 1 COMMENT '1 active 0 disabled',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_merchant_user (merchant_id, user_id),
+  INDEX idx_merchant_users_user (user_id, status),
+  INDEX idx_merchant_users_merchant (merchant_id, status),
+  FOREIGN KEY (merchant_id) REFERENCES merchants(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS role_permissions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  role VARCHAR(20) NOT NULL,
+  permission VARCHAR(80) NOT NULL,
+  status TINYINT DEFAULT 1 COMMENT '1 active 0 disabled',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_role_permission (role, permission),
+  INDEX idx_role_permissions_role (role, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS user_permissions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  permission VARCHAR(80) NOT NULL,
+  effect VARCHAR(10) DEFAULT 'allow' COMMENT 'allow/deny',
+  status TINYINT DEFAULT 1 COMMENT '1 active 0 disabled',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_user_permission (user_id, permission),
+  INDEX idx_user_permissions_user (user_id, status, effect),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS permission_audit_logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  operator_id INT NOT NULL,
+  target_type VARCHAR(20) NOT NULL,
+  target_key VARCHAR(80) NOT NULL,
+  action VARCHAR(30) NOT NULL,
+  before_permissions JSON DEFAULT NULL,
+  after_permissions JSON DEFAULT NULL,
+  note VARCHAR(255) DEFAULT '',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_permission_audit_target (target_type, target_key, created_at),
+  INDEX idx_permission_audit_operator (operator_id, created_at),
+  FOREIGN KEY (operator_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS permission_versions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  scope_type VARCHAR(20) NOT NULL,
+  scope_key VARCHAR(80) NOT NULL,
+  version INT DEFAULT 1,
+  invalidated_at DATETIME DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_permission_versions_scope (scope_type, scope_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 商品表
@@ -180,7 +247,8 @@ CREATE TABLE IF NOT EXISTS orders (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id),
   INDEX idx_user (user_id),
-  INDEX idx_status (status)
+  INDEX idx_status (status),
+  INDEX idx_orders_status_created (status, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 订单明细表
@@ -197,7 +265,188 @@ CREATE TABLE IF NOT EXISTS order_items (
   FOREIGN KEY (product_id) REFERENCES products(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 支付回调记录表
+CREATE TABLE IF NOT EXISTS payment_callback_records (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  idempotency_key VARCHAR(191) NOT NULL,
+  provider VARCHAR(20) NOT NULL COMMENT 'mock/wechat/alipay',
+  order_id INT DEFAULT NULL,
+  order_no VARCHAR(50) NOT NULL,
+  transaction_id VARCHAR(100) DEFAULT NULL,
+  paid_amount DECIMAL(10,2) DEFAULT NULL,
+  status VARCHAR(20) DEFAULT 'processing' COMMENT 'processing/processed/failed',
+  duplicate_count INT DEFAULT 0,
+  raw_payload JSON DEFAULT NULL,
+  processed_at DATETIME DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_payment_callback_idempotency (idempotency_key),
+  INDEX idx_payment_callback_order_no (order_no),
+  INDEX idx_payment_callback_transaction (transaction_id),
+  FOREIGN KEY (order_id) REFERENCES orders(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 退款申请表
+CREATE TABLE IF NOT EXISTS refund_requests (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  idempotency_key VARCHAR(191) NOT NULL,
+  order_id INT NOT NULL,
+  order_no VARCHAR(50) NOT NULL,
+  user_id INT NOT NULL,
+  refund_type VARCHAR(20) DEFAULT 'full' COMMENT 'full/partial',
+  amount DECIMAL(10,2) NOT NULL,
+  reason VARCHAR(255) DEFAULT '',
+  status VARCHAR(20) DEFAULT 'requested' COMMENT 'requested/approved/rejected/refunding/refunded/failed',
+  provider VARCHAR(20) DEFAULT NULL,
+  provider_refund_id VARCHAR(100) DEFAULT NULL,
+  failed_reason VARCHAR(255) DEFAULT '',
+  requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  processed_at DATETIME DEFAULT NULL,
+  UNIQUE KEY uk_refund_idempotency (idempotency_key),
+  INDEX idx_refund_order (order_id),
+  INDEX idx_refund_user_status (user_id, status),
+  INDEX idx_refund_provider_refund_id (provider_refund_id),
+  FOREIGN KEY (order_id) REFERENCES orders(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS refund_events (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  refund_id INT NOT NULL,
+  from_status VARCHAR(20) NOT NULL,
+  to_status VARCHAR(20) NOT NULL,
+  operator_id INT DEFAULT NULL,
+  note VARCHAR(255) DEFAULT '',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_refund_events_refund (refund_id, created_at),
+  INDEX idx_refund_events_operator (operator_id, created_at),
+  FOREIGN KEY (refund_id) REFERENCES refund_requests(id),
+  FOREIGN KEY (operator_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS refund_evidence (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  refund_id INT NOT NULL,
+  user_id INT NOT NULL,
+  evidence_type VARCHAR(20) DEFAULT 'image' COMMENT 'image/video/document',
+  url VARCHAR(500) NOT NULL,
+  description VARCHAR(255) DEFAULT '',
+  object_key VARCHAR(500) DEFAULT '',
+  content_type VARCHAR(100) DEFAULT '',
+  file_size INT DEFAULT 0,
+  checksum VARCHAR(128) DEFAULT '',
+  scan_status VARCHAR(20) DEFAULT 'pending' COMMENT 'pending/passed/failed/quarantined',
+  scan_result VARCHAR(255) DEFAULT '',
+  scanned_at DATETIME DEFAULT NULL,
+  retention_policy VARCHAR(40) DEFAULT 'standard',
+  retention_days INT DEFAULT 180,
+  retention_expires_at DATETIME DEFAULT NULL,
+  cleanup_eligible TINYINT DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_refund_evidence_refund (refund_id, created_at),
+  INDEX idx_refund_evidence_user (user_id, created_at),
+  INDEX idx_refund_evidence_retention (cleanup_eligible, retention_expires_at),
+  FOREIGN KEY (refund_id) REFERENCES refund_requests(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS refund_review_audit_logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  refund_id INT NOT NULL,
+  operator_id INT NOT NULL,
+  operator_role VARCHAR(20) NOT NULL,
+  merchant_id INT DEFAULT NULL,
+  action VARCHAR(40) NOT NULL,
+  decision VARCHAR(20) NOT NULL,
+  note VARCHAR(255) DEFAULT '',
+  evidence_ids JSON DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_refund_review_audit_refund (refund_id, created_at),
+  INDEX idx_refund_review_audit_operator (operator_id, created_at),
+  FOREIGN KEY (refund_id) REFERENCES refund_requests(id),
+  FOREIGN KEY (operator_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS refund_evidence_scan_callback_records (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  idempotency_key VARCHAR(191) NOT NULL,
+  evidence_id INT NOT NULL,
+  scan_status VARCHAR(20) NOT NULL,
+  scan_result VARCHAR(255) DEFAULT '',
+  duplicate_count INT DEFAULT 0,
+  raw_payload JSON DEFAULT NULL,
+  processed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_refund_evidence_scan_callback (idempotency_key),
+  INDEX idx_refund_evidence_scan_callback_evidence (evidence_id, created_at),
+  FOREIGN KEY (evidence_id) REFERENCES refund_evidence(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS refund_callback_records (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  idempotency_key VARCHAR(191) NOT NULL,
+  provider VARCHAR(20) NOT NULL COMMENT 'mock/wechat/alipay',
+  refund_id INT DEFAULT NULL,
+  provider_refund_id VARCHAR(100) DEFAULT NULL,
+  status VARCHAR(20) DEFAULT 'processing' COMMENT 'processing/processed/failed',
+  failed_reason VARCHAR(255) DEFAULT '',
+  duplicate_count INT DEFAULT 0,
+  raw_payload JSON DEFAULT NULL,
+  processed_at DATETIME DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_refund_callback_idempotency (idempotency_key),
+  INDEX idx_refund_callback_refund (refund_id),
+  INDEX idx_refund_callback_provider_refund (provider_refund_id),
+  FOREIGN KEY (refund_id) REFERENCES refund_requests(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- 评价表
+CREATE TABLE IF NOT EXISTS operation_logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  operator_id INT DEFAULT NULL,
+  operator_role VARCHAR(20) DEFAULT '',
+  merchant_id INT DEFAULT NULL,
+  action VARCHAR(60) NOT NULL,
+  target_type VARCHAR(40) NOT NULL,
+  target_id VARCHAR(80) DEFAULT '',
+  metadata JSON DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_operation_logs_action (action, created_at),
+  INDEX idx_operation_logs_operator (operator_id, created_at),
+  INDEX idx_operation_logs_target (target_type, target_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS export_jobs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  export_type VARCHAR(40) NOT NULL,
+  status VARCHAR(20) DEFAULT 'placeholder',
+  requested_by INT DEFAULT NULL,
+  requester_role VARCHAR(20) DEFAULT '',
+  merchant_id INT DEFAULT NULL,
+  filters JSON DEFAULT NULL,
+  file_url VARCHAR(500) DEFAULT '',
+  message VARCHAR(255) DEFAULT '',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_export_jobs_requester (requested_by, created_at),
+  INDEX idx_export_jobs_type_status (export_type, status, created_at),
+  FOREIGN KEY (requested_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS retention_cleanup_runs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  mode VARCHAR(20) DEFAULT 'dry_run',
+  status VARCHAR(20) DEFAULT 'completed',
+  candidate_count INT DEFAULT 0,
+  deleted_count INT DEFAULT 0,
+  metadata JSON DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_retention_cleanup_runs_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS reviews (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,

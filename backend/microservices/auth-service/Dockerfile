@@ -1,9 +1,9 @@
-FROM node:20-alpine
+﻿FROM node:20-alpine
 
 WORKDIR /app
 
 COPY auth-service/package*.json ./
-RUN npm install --production
+RUN npm ci --omit=dev
 
 COPY auth-service/ ./auth-service/
 COPY shared/ ./shared/

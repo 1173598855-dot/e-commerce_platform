@@ -1,5 +1,6 @@
 const mysql = require('mysql2/promise');
 const { generateToken } = require('../../shared');
+const { resolveAssetUrl } = require('../../shared/asset-url');
 
 function formatPagination(page, pageSize, total) {
   return {
@@ -15,6 +16,15 @@ function formatUserAddressList(rows, page, pageSize, total) {
     list: rows,
     pagination: formatPagination(page, pageSize, total),
   };
+}
+
+function resolveUserProductAssets(rows) {
+  if (!Array.isArray(rows)) return;
+  rows.forEach((row) => {
+    row.image = resolveAssetUrl(row.image);
+    row.avatar = resolveAssetUrl(row.avatar);
+    row.business_license = resolveAssetUrl(row.business_license);
+  });
 }
 
 class UserService {
@@ -43,7 +53,7 @@ class UserService {
   async createAddress(userId, body) {
     const { receiver_name, receiver_phone, province, city, district, detail_address, is_default } = body;
     if (!receiver_name || !receiver_phone || !province || !city || !district || !detail_address) {
-      throw Object.assign(new Error('请填写完整地址'), { httpStatus: 400 });
+      throw Object.assign(new Error('No fields to update'), { httpStatus: 400 });
     }
     if (is_default) {
       await this.pool.query('UPDATE addresses SET is_default = 0 WHERE user_id = ?', [userId]);
@@ -74,7 +84,7 @@ class UserService {
     }
 
     if (fields.length === 0) {
-      throw Object.assign(new Error('没有需要更新的字段'), { httpStatus: 400 });
+      throw Object.assign(new Error('No fields to update'), { httpStatus: 400 });
     }
 
     params.push(id, userId);
@@ -117,6 +127,7 @@ class UserService {
       'SELECT f.*, p.name, p.price, p.image, p.sales, c.name as category_name FROM favorites f JOIN products p ON f.product_id = p.id LEFT JOIN categories c ON p.category_id = c.id WHERE f.user_id = ? ORDER BY f.created_at DESC LIMIT ? OFFSET ?',
       [userId, pageSize, offset]
     );
+    resolveUserProductAssets(rows);
     const [[{ count }]] = await this.pool.query('SELECT COUNT(*) as count FROM favorites WHERE user_id = ?', [userId]);
     return { list: rows, pagination: formatPagination(page, pageSize, count) };
   }
@@ -128,7 +139,7 @@ class UserService {
 
   async getCoupons() {
     const [rows] = await this.pool.query(
-      "SELECT *, CASE WHEN type = 1 THEN CONCAT('满', condition_amount, '减', discount_amount) WHEN type = 2 THEN CONCAT(discount_amount, '折') ELSE CONCAT('立减', discount_amount) END as display_text FROM coupons WHERE status = 1 AND valid_start <= NOW() AND valid_end >= NOW() AND issued_count < total_count ORDER BY discount_amount DESC"
+      "SELECT *, CASE WHEN type = 1 THEN CONCAT('min ', condition_amount, ' off ', discount_amount) WHEN type = 2 THEN CONCAT(discount_amount, ' discount') ELSE CONCAT('off ', discount_amount) END as display_text FROM coupons WHERE status = 1 AND valid_start <= NOW() AND valid_end >= NOW() AND issued_count < total_count ORDER BY discount_amount DESC"
     );
     return rows;
   }
@@ -141,7 +152,7 @@ class UserService {
     const coupon = coupons[0];
     const [owned] = await this.pool.query('SELECT COUNT(*) as c FROM user_coupons WHERE user_id = ? AND coupon_id = ? AND status = 1', [userId, coupon_id]);
     if (coupon.per_user_limit > 0 && owned[0].c >= coupon.per_user_limit) {
-      throw Object.assign(new Error('Already received'), { httpStatus: 400 });
+      throw Object.assign(new Error('No fields to update'), { httpStatus: 400 });
     }
     await this.pool.query('INSERT INTO user_coupons (user_id, coupon_id, expires_at) VALUES (?, ?, ?)', [userId, coupon_id, coupon.valid_end]);
     await this.pool.query('UPDATE coupons SET issued_count = issued_count + 1 WHERE id = ?', [coupon_id]);
@@ -168,15 +179,15 @@ class UserService {
 
   async useCoupon(userId, body) {
     const { user_coupon_id, order_id, order_amount } = body;
-    if (!user_coupon_id || !order_id) throw Object.assign(new Error('参数不完整'), { httpStatus: 400 });
+    if (!user_coupon_id || !order_id) throw Object.assign(new Error('Invalid coupon request'), { httpStatus: 400 });
     const [userCoupons] = await this.pool.query(
       'SELECT uc.*, c.type, c.condition_amount, c.discount_amount, c.min_order_amount FROM user_coupons uc JOIN coupons c ON uc.coupon_id = c.id WHERE uc.id = ? AND uc.user_id = ? AND uc.status = 1',
       [user_coupon_id, userId]
     );
-    if (userCoupons.length === 0) throw Object.assign(new Error('优惠券不可用'), { httpStatus: 400 });
+    if (userCoupons.length === 0) throw Object.assign(new Error('Coupon unavailable'), { httpStatus: 400 });
     const coupon = userCoupons[0];
     if (order_amount < coupon.min_order_amount) {
-      throw Object.assign(new Error(`订单金额需满${coupon.min_order_amount}元`), { httpStatus: 400 });
+      throw Object.assign(new Error(`Order amount must reach ${coupon.min_order_amount}`), { httpStatus: 400 });
     }
     await this.pool.query('UPDATE user_coupons SET status = 2, order_id = ?, used_at = NOW() WHERE id = ?', [order_id, user_coupon_id]);
     let discount = 0;
@@ -192,13 +203,13 @@ class UserService {
 
   async getPoints(userId) {
     const [users] = await this.pool.query('SELECT points FROM users WHERE id = ?', [userId]);
-    if (users.length === 0) throw Object.assign(new Error('用户不存在'), { httpStatus: 404 });
+    if (users.length === 0) throw Object.assign(new Error('User not found'), { httpStatus: 404 });
     return { points: users[0].points };
   }
 
   async addPoints(userId, body) {
     const { points, type, description, relatedId } = body;
-    if (!points || !type) throw Object.assign(new Error('积分数量和类型不能为空'), { httpStatus: 400 });
+    if (!points || !type) throw Object.assign(new Error('points and type required'), { httpStatus: 400 });
     await this.pool.query('UPDATE users SET points = points + ? WHERE id = ?', [points, userId]);
     await this.pool.query(
       'INSERT INTO points_logs (user_id, points, type, description, related_id) VALUES (?, ?, ?, ?, ?)',
@@ -210,18 +221,18 @@ class UserService {
 
   async consumePoints(userId, body) {
     const { points, type, relatedId } = body;
-    if (!points || points <= 0) throw Object.assign(new Error('积分数量必须大于0'), { httpStatus: 400 });
+    if (!points || points <= 0) throw Object.assign(new Error('points must be greater than 0'), { httpStatus: 400 });
     const connection = await this.pool.getConnection();
     try {
       await connection.beginTransaction();
       const [users] = await connection.execute('SELECT points FROM users WHERE id = ? FOR UPDATE', [userId]);
       if (users.length === 0) {
         await connection.rollback();
-        throw Object.assign(new Error('用户不存在'), { httpStatus: 404 });
+        throw Object.assign(new Error('User not found'), { httpStatus: 404 });
       }
       if (users[0].points < points) {
         await connection.rollback();
-        throw Object.assign(new Error('积分余额不足'), { httpStatus: 400 });
+        throw Object.assign(new Error('No fields to update'), { httpStatus: 400 });
       }
       await connection.execute('UPDATE users SET points = points - ? WHERE id = ?', [points, userId]);
       await connection.execute(
@@ -238,7 +249,6 @@ class UserService {
       connection.release();
     }
   }
-
   async getPointsLogs(userId, query) {
     const page = parseInt(query.page) || 1;
     const pageSize = parseInt(query.pageSize) || 20;
@@ -253,7 +263,7 @@ class UserService {
 
   async applyMerchant(body) {
     const { name, contact_name, contact_phone, business_license, description, address } = body;
-    if (!name || !contact_name || !contact_phone) throw Object.assign(new Error('店铺名称、联系人和电话不能为空'), { httpStatus: 400 });
+    if (!name || !contact_name || !contact_phone) throw Object.assign(new Error('merchant contact fields required'), { httpStatus: 400 });
     const [result] = await this.pool.query(
       'INSERT INTO merchants (name, contact_name, contact_phone, business_license, description, address, status) VALUES (?, ?, ?, ?, ?, ?, 0)',
       [name, contact_name, contact_phone, business_license || '', description || '', address || '']
@@ -262,14 +272,14 @@ class UserService {
   }
 
   async getMerchantInfo(merchantId) {
-    if (!merchantId) throw Object.assign(new Error('未关联商家信息'), { httpStatus: 404 });
+    if (!merchantId) throw Object.assign(new Error('merchantId required'), { httpStatus: 404 });
     const [rows] = await this.pool.query('SELECT * FROM merchants WHERE id = ?', [merchantId]);
-    if (rows.length === 0) throw Object.assign(new Error('商家不存在'), { httpStatus: 404 });
+    if (rows.length === 0) throw Object.assign(new Error('Merchant not found'), { httpStatus: 404 });
     return rows[0];
   }
 
   async getMerchantProducts(merchantId, query) {
-    if (!merchantId) throw Object.assign(new Error('Not a merchant'), { httpStatus: 400 });
+    if (!merchantId) throw Object.assign(new Error('merchantId required'), { httpStatus: 404 });
     const page = parseInt(query.page) || 1;
     const pageSize = parseInt(query.pageSize) || 20;
     const offset = (page - 1) * pageSize;
@@ -277,6 +287,7 @@ class UserService {
       'SELECT * FROM products WHERE merchant_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
       [merchantId, pageSize, offset]
     );
+    resolveUserProductAssets(rows);
     const [[{ count }]] = await this.pool.query('SELECT COUNT(*) as count FROM products WHERE merchant_id = ?', [merchantId]);
     return { list: rows, pagination: formatPagination(page, pageSize, count) };
   }
@@ -287,4 +298,5 @@ const userService = new UserService();
 module.exports = {
   userService,
   formatUserAddressList,
+  resolveUserProductAssets,
 };

@@ -1,12 +1,12 @@
-# 仿京东淘宝网全栈电商平台
+# Xiaoyi Mall E-commerce Platform
 
-基于 React Native + Node.js + MySQL + Redis + Docker 的电商项目，当前正式主线为 `gateway + microservices`。
+A full-stack e-commerce project based on React Native, Node.js, MySQL, Redis, Nginx, and Docker. The current active backend line is `gateway + backend/microservices`; the active mobile app line is `frontend`.
 
-## 当前架构
+## Architecture
 
 ```text
-React Native App
-  -> Nginx (HTTPS / 443)
+React Native App (frontend)
+  -> Nginx (80/443)
     -> API Gateway (4100 -> 4000)
       -> auth-service    (4006)
       -> user-service    (4001)
@@ -18,43 +18,134 @@ React Native App
     -> Redis (6379)
 ```
 
-## 现在的工作约定
+## Active Project Lines
 
-- `backend/microservices` 是正式后端主线
-- `backend/src` 仅作为历史参考代码
-- 前端统一走 `frontend/src/api/client.js`
-- 生产环境地址统一使用 `https://api.xiaoyimall.com/api`
-- Android release 签名从 `frontend/android/keystore.properties` 读取
+- `frontend`: active React Native Android app.
+- `backend/microservices`: active backend runtime.
+- `backend/src`: historical monolith reference code.
+- `mobile`: historical or experimental app line until explicitly reactivated.
+- `frontend/tools/legacy-fixes`: historical repair scripts kept only for auditability.
 
-## 已补齐的关键脚本
+## Required Local Configuration
 
-- `frontend` 下的 `npm run bundle:android`
-- `backend/microservices` 下的 `npm run smoke`
+Create local environment config from the template:
 
-## 已完成的阶段
+```powershell
+Copy-Item .env.example .env
+```
 
-1. 主架构统一
-2. 接口契约统一
-3. 后端工程边界整理
-4. 前端 App 架构整理
-5. 构建和发布体系硬化
-6. 最小测试和质量门禁
+Fill in at least:
 
-## 验证命令
+```text
+DB_PASSWORD=...
+JWT_SECRET=...
+REDIS_PASSWORD=...
+ASSET_BASE_URL=... # optional CDN/base URL for uploaded assets
+SMS_PROVIDER=console # use aliyun/tencent only after credentials and SDK integration are ready
+PAYMENT_PROVIDER=mock # use wechat/alipay only after merchant credentials and callbacks are ready
+ORDER_PAYMENT_TIMEOUT_MINUTES=30 # pending orders older than this are auto-cancelled by order-service
+```
 
-```bash
+Android release signing is intentionally blocked until a real keystore is configured. Copy and fill this file only when a real release keystore is available:
+
+```powershell
+Copy-Item frontend/android/keystore.properties.example frontend/android/keystore.properties
+```
+
+Do not commit `.env`, `frontend/android/keystore.properties`, `*.jks`, or `*.keystore`.
+
+## Install Dependencies
+
+Frontend:
+
+```powershell
 cd frontend
-npm run bundle:android
+npm ci
+```
 
-cd ../backend/microservices
-npm run smoke
+Backend microservices:
 
-cd ../
+```powershell
+cd backend/microservices
+npm ci
+```
+
+Each Dockerized microservice has its own `package-lock.json`; Docker builds use `npm ci --omit=dev` for reproducible production installs.
+
+## Quality Checks
+
+Run the baseline check from the repository root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/quality-check.ps1
+```
+
+The baseline check runs:
+
+- `docker compose config`
+- frontend Android JS bundle generation
+- backend deterministic Node tests
+- frontend lint
+
+Android release build is skipped until signing is configured. After configuring a real keystore:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/quality-check.ps1 -AndroidRelease
+```
+
+## Docker
+
+Validate configuration:
+
+```powershell
 docker compose config
 ```
 
-## 说明
+Build service images:
 
-- `frontend/android/keystore.properties.example` 是签名模板，真实 `keystore.properties` 不应提交
-- `frontend/android/.gitignore` 已忽略签名文件
-- `frontend/android/app/src/main/AndroidManifest.xml` 只保留正式包需要的最小权限
+```powershell
+docker compose build
+```
+
+Start the local stack only after `.env` is configured:
+
+```powershell
+docker compose up -d
+```
+
+## CI
+
+GitHub Actions workflow is defined in `.github/workflows/ci.yml`. It runs backend node tests, frontend lint, frontend bundle generation, Docker Compose config validation, and Docker image build smoke checks.
+
+CI intentionally does not deploy and does not build Android release APKs until a secure keystore secret strategy is added.
+
+## Production API
+
+The app production API base URL is currently configured as:
+
+```text
+https://api.xiaoyimall.com/api
+```
+
+See `frontend/src/config/env.js`.
+
+## Current Baseline Status
+
+Completed in Phase 1:
+
+- Weak default DB/JWT fallbacks removed from Docker Compose.
+- Backend shared JWT fallback removed; `JWT_SECRET` is required.
+- Redis password enforcement is enabled in Docker Compose; `REDIS_PASSWORD` is required.
+- Android release no longer falls back to debug signing.
+- Frontend Metro config dependency aligned with React Native 0.73.
+- Frontend lint baseline added.
+- Lockfiles are tracked for reproducible dependency installs.
+- Dockerfiles use `npm ci` / `npm ci --omit=dev`.
+- Local quality script and CI baseline are in place.
+
+Known non-blocking issues are tracked in `docs/phase-1-engineering-baseline.md`.
+
+## Next Phases
+
+- Phase 2: runtime security and real integrations. Track in `docs/phase-2-runtime-security.md`.
+- Phase 3: business closure, real payment, refund, logistics, and store readiness. Track in `docs/phase-3-business-closure.md`.

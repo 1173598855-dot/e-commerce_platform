@@ -6,30 +6,10 @@ import {
 import { Ionicons } from 'react-native-vector-icons';
 import { addressApi } from '../api';
 
-// йʡ
-const PROVINCES = ['', 'Ϻ', '', '', '㽭', '', 'Ĵ', '', '', '', '', 'ɽ', '', 'ӱ', '', '', '', '', '', ''];
-const CITIES = {
-  '': ['', '', '', '', '̨'],
-  'Ϻ': ['', 'ֶ', '', '', ''],
-  '': ['', 'Խ', '', '', ''],
-  '': ['', 'ɽ', '޺', '', ''],
-  '㽭': ['', '', '', '', ''],
-  '': ['Ͼ', '', '', '', ''],
-  'Ĵ': ['ɶ', '', '', 'ϳ', '˱'],
-  '': ['人', '˲', '', '', 'ʯ'],
-  '': ['ɳ', '', '̶', '', ''],
-  '': ['', '', 'Ȫ', '', ''],
-  '': ['Ϸ', 'ߺ', '', '', ''],
-  'ɽ': ['', 'ൺ', '̨', 'Ϋ', ''],
-  '': ['֣', '', '', '', ''],
-  'ӱ': ['ʯׯ', 'ɽ', 'ػʵ', '', ''],
-  '': ['', '', 'ɽ', '˳', 'Ӫ'],
-  '': ['', '', '', '', 'μ'],
-  '': ['ϲ', 'Ž', '', '', '˴'],
-  '': ['', '', '', '', 'Ϫ'],
-  '': ['', '', '', '', ''],
-  '': ['', '', '', 'Ĳ', ''],
-};
+// Province/city picker data was corrupted in earlier generated code. Keep the
+// form usable with manual address fields until a verified region dataset is added.
+const PROVINCES = [];
+const CITIES = {};
 
 export default function AddressScreen({ navigation, route }) {
   const [addresses, setAddresses] = useState([]);

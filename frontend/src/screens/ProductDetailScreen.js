@@ -7,7 +7,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { productApi, cartApi, favoriteApi } from '../api';
 import SkuSelector from '../components/SkuSelector';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme/designSystem';
-import { ContainerStyles, TextStyles, ButtonStyles, CardStyles, TagStyles } from '../theme/styles';
+import { ContainerStyles } from '../theme/styles';
 
 /**
  * 商品详情页 - 企业级实现
@@ -19,19 +19,13 @@ export default function ProductDetailScreen({ route, navigation }) {
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showSku, setShowSku] = useState(false);
   const [selectedSku, setSelectedSku] = useState(null);
   const [selectedQty, setSelectedQty] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  useEffect(() => {
-    loadDetail();
-    checkFavorite();
-  }, [id]);
-
-  const loadDetail = async () => {
+  const loadDetail = useCallback(async () => {
     try {
       setLoading(true);
       const [productRes, reviewsRes] = await Promise.all([
@@ -45,16 +39,21 @@ export default function ProductDetailScreen({ route, navigation }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const checkFavorite = async () => {
+  const checkFavorite = useCallback(async () => {
     try {
       const res = await favoriteApi.check(id);
       setIsFavorite(res.data?.isFavorite || false);
     } catch (err) {
       // ignore
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    loadDetail();
+    checkFavorite();
+  }, [loadDetail, checkFavorite]);
 
   const toggleFavorite = async () => {
     try {
@@ -124,7 +123,6 @@ export default function ProductDetailScreen({ route, navigation }) {
   if (!product) return null;
 
   const displayPrice = selectedSku ? selectedSku.price : product.price;
-  const displayQty = selectedSku ? selectedQty : quantity;
 
   return (
     <View style={ContainerStyles.main}>

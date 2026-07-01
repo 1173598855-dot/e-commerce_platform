@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet,
   KeyboardAvoidingView, Platform
@@ -7,7 +7,7 @@ import { Ionicons } from "react-native-vector-icons";
 import { chatApi } from "../api";
 
 export default function ChatScreen({ route, navigation }) {
-  const { otherUserId, otherUserName } = route.params || {};
+  const { otherUserId } = route.params || {};
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,37 +15,37 @@ export default function ChatScreen({ route, navigation }) {
   const [showSessionList, setShowSessionList] = useState(!otherUserId);
   const flatListRef = useRef(null);
 
+  const loadSessions = useCallback(async () => {
+    try {
+      const res = await chatApi.getSessions();
+      setSessions(res.data || []);
+    } catch (err) {
+      console.error("load sessions failed:", err);
+    }
+  }, []);
+
+  const loadMessages = useCallback(async () => {
+    try {
+      const res = await chatApi.getMessages(otherUserId);
+      setMessages(res.data || []);
+    } catch (err) {
+      console.error("load messages failed:", err);
+    }
+  }, [otherUserId]);
+
   useEffect(() => {
     if (otherUserId) {
       loadMessages();
     } else {
       loadSessions();
     }
-  }, [otherUserId]);
+  }, [otherUserId, loadMessages, loadSessions]);
 
   useEffect(() => {
     if (flatListRef.current && messages.length > 0) {
       flatListRef.current.scrollToEnd({ animated: true });
     }
   }, [messages]);
-
-  const loadSessions = async () => {
-    try {
-      const res = await chatApi.getSessions();
-      setSessions(res.data || []);
-    } catch (err) {
-      console.error("ػỰʧ:", err);
-    }
-  };
-
-  const loadMessages = async () => {
-    try {
-      const res = await chatApi.getMessages(otherUserId);
-      setMessages(res.data || []);
-    } catch (err) {
-      console.error("Ϣʧ:", err);
-    }
-  };
 
   const handleSend = async () => {
     if (!inputText.trim() || loading) return;
@@ -91,7 +91,7 @@ export default function ChatScreen({ route, navigation }) {
           <Text style={styles.sessionName}>{item.nickname}</Text>
           <Text style={styles.sessionTime}>{new Date(item.last_message_time).toLocaleDateString()}</Text>
         </View>
-        <Text style={styles.sessionLastMsg} numberOfLines={1}>{item.last_content || "Ϣ"}</Text>
+        <Text style={styles.sessionLastMsg} numberOfLines={1}>{item.last_content || "No messages"}</Text>
       </View>
       {item.unread_count > 0 && (
         <View style={styles.badge}>
@@ -111,7 +111,7 @@ export default function ChatScreen({ route, navigation }) {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="chatbubbles-outline" size={48} color="#ddd" />
-              <Text style={styles.emptyText}>Ự</Text>
+              <Text style={styles.emptyText}>No sessions</Text>
             </View>
           }
         />
@@ -130,21 +130,21 @@ export default function ChatScreen({ route, navigation }) {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="chatbubbles-outline" size={48} color="#ddd" />
-            <Text style={styles.emptyText}>Ϣ</Text>
+            <Text style={styles.emptyText}>No messages</Text>
           </View>
         }
       />
       <View style={styles.inputArea}>
         <TextInput
           style={styles.input}
-          placeholder="Ϣ..."
+          placeholder="Message..."
           value={inputText}
           onChangeText={setInputText}
           multiline
           maxLength={500}
         />
         <TouchableOpacity style={[styles.sendBtn, (!inputText.trim() || loading) && styles.sendBtnDisabled]} onPress={handleSend} disabled={!inputText.trim() || loading}>
-          <Text style={styles.sendText}>{loading ? "..." : ""}</Text>
+          <Text style={styles.sendText}>{loading ? "..." : "Send"}</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -181,4 +181,3 @@ const styles = StyleSheet.create({
   empty: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 80 },
   emptyText: { fontSize: 15, color: "#999", marginTop: 12 },
 });
-

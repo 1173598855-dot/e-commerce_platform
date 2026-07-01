@@ -1,5 +1,6 @@
 const mysql = require('mysql2/promise');
 const redis = require('redis');
+const { buildRedisClientOptions } = require('../../shared/redis-config');
 
 class MqService {
   constructor() {
@@ -15,12 +16,7 @@ class MqService {
 
   async initRedis() {
     try {
-      this.redisClient = redis.createClient({
-        socket: {
-          host: process.env.REDIS_HOST || 'localhost',
-          port: parseInt(process.env.REDIS_PORT) || 6379,
-        },
-      });
+      this.redisClient = redis.createClient(buildRedisClientOptions());
       this.redisClient.on('error', (err) => console.warn('Redis Error:', err.message));
       await this.redisClient.connect();
       console.log('Redis connected');

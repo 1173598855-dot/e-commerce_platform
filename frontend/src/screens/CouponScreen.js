@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { Ionicons } from 'react-native-vector-icons';
 import { couponApi } from '../api';
 
@@ -48,7 +48,7 @@ export default function CouponScreen() {
         contentContainerStyle={{ padding: 12 }}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name='card-outline' size={48} color='#ddd' />
+            <Ionicons name="card-outline" size={48} color="#ddd" />
             <Text style={styles.emptyText}>No coupons</Text>
           </View>
         }

@@ -5,8 +5,8 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme/designSystem';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Colors, Spacing, BorderRadius, Shadows } from '../theme/designSystem';
 
 const Card = ({
   children,

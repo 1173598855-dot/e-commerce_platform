@@ -72,7 +72,7 @@ export default function CouponCenterScreen() {
         contentContainerStyle={{ padding: 12 }}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name='card-outline' size={48} color='#ddd' />
+            <Ionicons name="card-outline" size={48} color="#ddd" />
             <Text style={styles.emptyText}>No coupons</Text>
           </View>
         }

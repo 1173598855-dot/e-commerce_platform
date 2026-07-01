@@ -5,12 +5,16 @@ function health(req, res) {
   return sendRes(res, { service: 'auth-service', status: 'running' }, 'OK');
 }
 
+function handleError(res, err, fallbackMessage) {
+  return sendError(res, err.message || fallbackMessage, err.httpStatus || 500);
+}
+
 async function register(req, res) {
   try {
     const result = await authService.register(req.body);
     return sendRes(res, result, '注册成功');
   } catch (err) {
-    return sendError(res, err.message || '注册失败', err.httpStatus || 500);
+    return handleError(res, err, '注册失败');
   }
 }
 
@@ -19,7 +23,7 @@ async function passwordLogin(req, res) {
     const result = await authService.passwordLogin(req.body);
     return sendRes(res, result, '登录成功');
   } catch (err) {
-    return sendError(res, err.message || '登录失败', err.httpStatus || 500);
+    return handleError(res, err, '登录失败');
   }
 }
 
@@ -28,7 +32,7 @@ async function sendCode(req, res) {
     await authService.sendCode(req.body);
     return sendRes(res, null, '验证码已发送');
   } catch (err) {
-    return sendError(res, err.message || '发送失败', err.httpStatus || 500);
+    return handleError(res, err, '发送失败');
   }
 }
 
@@ -37,7 +41,7 @@ async function smsLogin(req, res) {
     const result = await authService.smsLogin(req.body);
     return sendRes(res, result, '登录成功');
   } catch (err) {
-    return sendError(res, err.message || '登录失败', err.httpStatus || 500);
+    return handleError(res, err, '登录失败');
   }
 }
 
@@ -46,7 +50,7 @@ async function wxLogin(req, res) {
     const result = await authService.wxLogin(req.body);
     return sendRes(res, result, '微信登录成功');
   } catch (err) {
-    return sendError(res, err.message || '微信登录失败', err.httpStatus || 500);
+    return handleError(res, err, '微信登录失败');
   }
 }
 
@@ -55,7 +59,7 @@ async function qqLogin(req, res) {
     const result = await authService.qqLogin(req.body);
     return sendRes(res, result, 'QQ登录成功');
   } catch (err) {
-    return sendError(res, err.message || 'QQ登录失败', err.httpStatus || 500);
+    return handleError(res, err, 'QQ登录失败');
   }
 }
 
@@ -64,7 +68,7 @@ async function profile(req, res) {
     const result = await authService.profile(req.user.userId);
     return sendRes(res, result);
   } catch (err) {
-    return sendError(res, err.message || '获取信息失败', err.httpStatus || 500);
+    return handleError(res, err, '获取信息失败');
   }
 }
 
@@ -73,7 +77,7 @@ async function refresh(req, res) {
     const result = await authService.refresh(req.body.refreshToken);
     return sendRes(res, result, 'Token 刷新成功');
   } catch (err) {
-    return sendError(res, err.message || '刷新 Token 失败', err.httpStatus || 500);
+    return handleError(res, err, '刷新 Token 失败');
   }
 }
 
@@ -82,7 +86,7 @@ async function verify(req, res) {
     const result = await authService.verify(req.body.token);
     return sendRes(res, result, result.valid ? 'Token 有效' : 'Token 无效或已过期');
   } catch (err) {
-    return sendError(res, err.message || '验证失败', err.httpStatus || 500);
+    return handleError(res, err, '验证失败');
   }
 }
 
@@ -91,7 +95,7 @@ async function logout(req, res) {
     await authService.logout();
     return sendRes(res, null, '登出成功');
   } catch (err) {
-    return sendError(res, err.message || '登出失败', err.httpStatus || 500);
+    return handleError(res, err, '登出失败');
   }
 }
 
@@ -100,7 +104,34 @@ async function updateProfile(req, res) {
     await authService.updateProfile(req.user.userId, req.body);
     return sendRes(res, null, '更新成功');
   } catch (err) {
-    return sendError(res, err.message || '更新失败', err.httpStatus || 500);
+    return handleError(res, err, '更新失败');
+  }
+}
+
+async function listRolePermissions(req, res) {
+  try {
+    const result = await authService.listRolePermissions(req.query.role);
+    return sendRes(res, result);
+  } catch (err) {
+    return handleError(res, err, 'Get permissions failed');
+  }
+}
+
+async function updateRolePermissions(req, res) {
+  try {
+    const result = await authService.updateRolePermissions(req.user, req.params.role, req.body.permissions);
+    return sendRes(res, result, 'Permissions updated');
+  } catch (err) {
+    return handleError(res, err, 'Update permissions failed');
+  }
+}
+
+async function listPermissionAuditLogs(req, res) {
+  try {
+    const result = await authService.listPermissionAuditLogs(req.query);
+    return sendRes(res, result);
+  } catch (err) {
+    return handleError(res, err, 'Get permission audit logs failed');
   }
 }
 
@@ -117,4 +148,7 @@ module.exports = {
   verify,
   logout,
   updateProfile,
+  listRolePermissions,
+  updateRolePermissions,
+  listPermissionAuditLogs,
 };

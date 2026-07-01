@@ -11,8 +11,13 @@
     "start:mq": "node mq-service/index.js",
     "start:search": "node search-service/index.js",
     "start:all": "concurrently \"npm run start:user\" \"npm run start:product\" \"npm run start:order\" \"npm run start:mq\" \"npm run start:search\" \"npm run start:gateway\"",
-    "test": "jest"
-    ,"smoke": "powershell -ExecutionPolicy Bypass -File tests/api-smoke.ps1"
+    "preflight:launch": "node scripts/launch-preflight.js ../../.env.production.local",
+    "readiness:providers": "node scripts/provider-readiness.js ../../.env.production.local",
+    "checklist:launch": "node scripts/launch-checklist.js ../../.env.production.local",
+    "test": "npm run test:node",
+    "test:node": "node scripts/run-node-tests.js",
+    "test:jest": "jest",
+    "smoke": "powershell -ExecutionPolicy Bypass -File tests/api-smoke.ps1"
   },
   "dependencies": {
     "axios": "^1.6.5",

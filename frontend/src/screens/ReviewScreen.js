@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  Alert, FlatList, Image
+  Alert
 } from 'react-native';
 import { Ionicons } from 'react-native-vector-icons';
 import { reviewApi, orderApi } from '../api';
@@ -13,13 +13,7 @@ export default function ReviewScreen({ route, navigation }) {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (fromOrder && orderId) {
-      loadOrderProduct();
-    }
-  }, []);
-
-  const loadOrderProduct = async () => {
+  const loadOrderProduct = useCallback(async () => {
     try {
       const res = await orderApi.getOrders({ orderId });
       if (res.data?.list?.[0]) {
@@ -31,7 +25,13 @@ export default function ReviewScreen({ route, navigation }) {
     } catch (err) {
       console.error('ضƷʧ:', err);
     }
-  };
+  }, [orderId]);
+
+  useEffect(() => {
+    if (fromOrder && orderId) {
+      loadOrderProduct();
+    }
+  }, [fromOrder, orderId, loadOrderProduct]);
 
   const handleSubmit = async () => {
     if (!content.trim()) {

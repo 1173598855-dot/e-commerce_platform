@@ -5,7 +5,7 @@
  */
 
 import React, { useCallback } from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, Text, ActivityIndicator, StyleSheet, View, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme/designSystem';
 

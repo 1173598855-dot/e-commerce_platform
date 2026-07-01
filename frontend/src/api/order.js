@@ -14,6 +14,20 @@ export const orderApi = {
   getOrderDetail: (id) => api.get(`/orders/${id}`),
   cancelOrder: (id) => api.put(`/orders/${id}/cancel`),
   confirmOrder: (id) => api.put(`/orders/${id}/confirm`),
+  requestRefund: (data) => api.post('/orders/refunds', data),
+  createRefundEvidenceUploadIntent: (refundId, data) => api.post(`/orders/refunds/${refundId}/evidence/upload-intent`, data),
+  addRefundEvidence: (refundId, data) => api.post(`/orders/refunds/${refundId}/evidence`, data),
+  listRefunds: (params) => api.get('/orders/refunds', { params }),
+  getRefundDetail: (refundId) => api.get(`/orders/refunds/${refundId}`),
+  reviewRefund: (refundId, data) => api.put(`/orders/refunds/${refundId}/review`, data),
+  updateRefundEvidenceScan: (evidenceId, data) => api.put(`/orders/refunds/evidence/${evidenceId}/scan`, data),
+  exportRefunds: (params) => api.get('/orders/refunds/export-placeholder', { params }),
+  listFulfillmentOrders: (params) => api.get('/orders/fulfillment/orders', { params }),
+  shipOrder: (orderId, data) => api.put(`/orders/${orderId}/ship`, data),
+  getLogistics: (orderId) => api.get(`/orders/logistics/${orderId}`),
+  createExportJob: (data) => api.post('/orders/exports/jobs', data),
+  listExportJobs: (params) => api.get('/orders/exports/jobs', { params }),
+  listOperationLogs: (params) => api.get('/orders/operations/logs', { params }),
 };
 
 export const paymentApi = {

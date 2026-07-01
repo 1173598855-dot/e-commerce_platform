@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
-import { Ionicons } from 'react-native-vector-icons';
 import { categoryApi, productApi } from '../api';
 
 export default function CategoryScreen({ navigation }) {
@@ -9,11 +8,16 @@ export default function CategoryScreen({ navigation }) {
   const [products, setProducts] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadCategories();
+  const loadProducts = useCallback(async (catId) => {
+    try {
+      const res = await productApi.getList({ categoryId: catId, pageSize: 50 });
+      setProducts(res.data?.list || []);
+    } catch (err) {
+      console.error('品失:', err);
+    }
   }, []);
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     try {
       const res = await categoryApi.getList();
       setCategories(res.data || []);
@@ -22,18 +26,13 @@ export default function CategoryScreen({ navigation }) {
         loadProducts(res.data[0].id);
       }
     } catch (err) {
-      console.error('طʧ:', err);
+      console.error('胤失:', err);
     }
-  };
+  }, [loadProducts]);
 
-  const loadProducts = async (catId) => {
-    try {
-      const res = await productApi.getList({ categoryId: catId, pageSize: 50 });
-      setProducts(res.data?.list || []);
-    } catch (err) {
-      console.error('Ʒʧ:', err);
-    }
-  };
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -43,7 +42,7 @@ export default function CategoryScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* б */}
+      {/* 斜 */}
       <View style={styles.leftPanel}>
         <FlatList
           data={categories}
@@ -65,7 +64,7 @@ export default function CategoryScreen({ navigation }) {
         />
       </View>
 
-      {/* ҲƷб */}
+      {/* 也品斜 */}
       <View style={styles.rightPanel}>
         <Text style={styles.panelTitle}>{selectedCat?.icon} {selectedCat?.name}</Text>
         <FlatList
@@ -89,7 +88,7 @@ export default function CategoryScreen({ navigation }) {
           )}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>Ʒ</Text>
+              <Text style={styles.emptyText}>品</Text>
             </View>
           }
         />
@@ -117,4 +116,3 @@ const styles = StyleSheet.create({
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
   emptyText: { fontSize: 14, color: '#999' },
 });
-

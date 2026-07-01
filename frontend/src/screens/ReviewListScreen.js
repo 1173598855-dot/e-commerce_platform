@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  RefreshControl, Image
+  RefreshControl
 } from 'react-native';
 import { Ionicons } from 'react-native-vector-icons';
 import { reviewApi } from '../api';
@@ -11,15 +11,10 @@ export default function ReviewListScreen({ route }) {
   const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState('0.0');
   const [totalReviews, setTotalReviews] = useState(0);
-  const [ratingDist, setRatingDist] = useState({});
   const [refreshing, setRefreshing] = useState(false);
   const [filterRating, setFilterRating] = useState(null);
 
-  useEffect(() => {
-    loadReviews();
-  }, [productId, filterRating]);
-
-  const loadReviews = async () => {
+  const loadReviews = useCallback(async () => {
     try {
       const params = { page: 1, pageSize: 50 };
       if (filterRating) params.rating = filterRating;
@@ -27,11 +22,14 @@ export default function ReviewListScreen({ route }) {
       setReviews(res.data?.list || []);
       setAverageRating(res.data?.averageRating || '0.0');
       setTotalReviews(res.data?.totalReviews || 0);
-      setRatingDist(res.data?.ratingDistribution || {});
     } catch (err) {
       console.error('ʧ:', err);
     }
-  };
+  }, [productId, filterRating]);
+
+  useEffect(() => {
+    loadReviews();
+  }, [loadReviews]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -77,7 +75,7 @@ export default function ReviewListScreen({ route }) {
               </View>
             );
           }
-        } catch(e) {}
+        } catch (e) {}
         return null;
       })()}
       <Text style={styles.reviewTime}>{new Date(item.created_at).toLocaleDateString()}</Text>

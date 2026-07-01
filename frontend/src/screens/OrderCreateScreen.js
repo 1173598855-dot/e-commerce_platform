@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView
 } from 'react-native';
@@ -14,19 +14,10 @@ export default function OrderCreateScreen({ route, navigation }) {
   const [selectedCoupon, setSelectedCoupon] = useState(null);
   const [discount, setDiscount] = useState(0);
 
-  useEffect(() => {
-    if (address) loadCoupons();
-  }, [address]);
-
   const totalAmount = items.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 1)), 0);
   const finalAmount = Math.max(0, totalAmount - discount);
 
-  const handleSelectAddress = (addr) => {
-    setAddress(addr);
-    navigation.goBack();
-  };
-
-  const loadCoupons = async () => {
+  const loadCoupons = useCallback(async () => {
     try {
       const res = await couponApi.getMy({ status: 'available' });
       const usable = (res.data || []).filter(c => {
@@ -38,7 +29,17 @@ export default function OrderCreateScreen({ route, navigation }) {
     } catch (err) {
       // ignore
     }
+  }, [totalAmount]);
+
+  useEffect(() => {
+    if (address) loadCoupons();
+  }, [address, loadCoupons]);
+
+  const handleSelectAddress = (addr) => {
+    setAddress(addr);
+    navigation.goBack();
   };
+
 
   const handleCreate = async () => {
     if (items.length === 0) {

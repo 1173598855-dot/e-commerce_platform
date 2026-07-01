@@ -1,11 +1,12 @@
-﻿FROM node:20-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install --production
+COPY gateway/package*.json ./
+RUN npm ci --omit=dev
 
-COPY . .
+COPY gateway/ ./
+COPY shared/ ./shared/
 
 EXPOSE 4000
 

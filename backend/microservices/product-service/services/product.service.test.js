@@ -14,3 +14,20 @@ test('formatProductList keeps list and pagination shape', () => {
     pagination: { page: 2, pageSize: 20, total: 40, totalPages: 2 },
   });
 });
+
+test('formatProductList resolves product image URLs with ASSET_BASE_URL', () => {
+  const previous = process.env.ASSET_BASE_URL;
+  process.env.ASSET_BASE_URL = 'https://cdn.example.com';
+
+  try {
+    const result = formatProductList([{ id: 1, name: 'Phone', image: '/uploads/phone.jpg' }], 1, 20, 1);
+
+    assert.equal(result.list[0].image, 'https://cdn.example.com/uploads/phone.jpg');
+  } finally {
+    if (previous === undefined) {
+      delete process.env.ASSET_BASE_URL;
+    } else {
+      process.env.ASSET_BASE_URL = previous;
+    }
+  }
+});

@@ -1,9 +1,9 @@
-FROM node:20-alpine
+﻿FROM node:20-alpine
 
 WORKDIR /app
 
 COPY search-service/package*.json ./
-RUN npm install --production
+RUN npm ci --omit=dev
 
 COPY search-service/ ./search-service/
 COPY shared/ ./shared/

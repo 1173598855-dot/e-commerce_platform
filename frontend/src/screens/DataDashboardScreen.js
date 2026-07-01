@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, StyleSheet, RefreshControl, Dimensions } from "react-native";
+import { View, Text, ScrollView, StyleSheet, RefreshControl } from "react-native";
 import { dataApi } from "../api";
-
-const { width } = Dimensions.get("window");
 
 export default function DataDashboardScreen() {
   const [overview, setOverview] = useState(null);

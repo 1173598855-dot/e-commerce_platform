@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Image
+  View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl
 } from "react-native";
 import { Ionicons } from "react-native-vector-icons";
 import { api } from "../api";
@@ -8,7 +8,6 @@ import { api } from "../api";
 export default function VideoFeedScreen({ navigation }) {
   const [videos, setVideos] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     loadVideos();
@@ -38,7 +37,7 @@ export default function VideoFeedScreen({ navigation }) {
     }
   };
 
-  const renderVideo = ({ item, index }) => (
+  const renderVideo = ({ item }) => (
     <View style={styles.videoCard}>
       {/* Ƶ */}
       <View style={styles.videoCover}>

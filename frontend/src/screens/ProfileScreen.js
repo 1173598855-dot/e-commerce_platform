@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, Image,
   Alert, RefreshControl, ActivityIndicator
@@ -7,7 +7,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { authApi, userApi } from '../api';
 import { authStore } from '../store/authStore';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme/designSystem';
-import { ContainerStyles, TextStyles, ButtonStyles, NavigationStyles } from '../theme/styles';
+import { ContainerStyles } from '../theme/styles';
 
 /**
  * 个人中心页 - 企业级实现

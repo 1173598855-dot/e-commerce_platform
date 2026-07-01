@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  RefreshControl, Alert, ActivityIndicator
+  RefreshControl, Alert, ActivityIndicator, Image
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { cartApi } from '../api';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme/designSystem';
-import { ContainerStyles, TextStyles, ButtonStyles } from '../theme/styles';
+import { ContainerStyles } from '../theme/styles';
 
 /**
  * 购物车页 - 企业级实现
@@ -15,7 +15,7 @@ import { ContainerStyles, TextStyles, ButtonStyles } from '../theme/styles';
  */
 export default function CartScreen({ navigation }) {
   const [cartItems, setCartItems] = useState([]);
-  const [total, setTotal] = useState('0.00');
+  const [, setTotal] = useState('0.00');
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -102,10 +102,10 @@ export default function CartScreen({ navigation }) {
 
   const getSelectedTotal = () => {
     const selectedItems = cartItems.filter(item => selectedIds.includes(item.id));
-    const total = selectedItems.reduce((sum, item) => {
+    const selectedTotal = selectedItems.reduce((sum, item) => {
       return sum + (parseFloat(item.price) * item.quantity);
     }, 0);
-    return total.toFixed(2);
+    return selectedTotal.toFixed(2);
   };
 
   const handleCheckout = () => {

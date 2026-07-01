@@ -1,9 +1,9 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, Modal, TouchableOpacity, StyleSheet, ScrollView, Alert
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { skuApi, favoriteApi } from '../api';
+import { skuApi } from '../api';
 
 // SKU规格选择弹窗
 export default function SkuSelector({ visible, productId, onClose, onConfirm }) {
@@ -12,16 +12,8 @@ export default function SkuSelector({ visible, productId, onClose, onConfirm }) 
   const [selectedSpecs, setSelectedSpecs] = useState({});
   const [selectedSku, setSelectedSku] = useState(null);
   const [quantity, setQuantity] = useState(1);
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (visible && productId) {
-      loadSkuData();
-    }
-  }, [visible, productId]);
-
-  const loadSkuData = async () => {
-    setLoading(true);
+  const loadSkuData = useCallback(async () => {
     try {
       const [optionsRes, skusRes] = await Promise.all([
         skuApi.getOptions(productId),
@@ -29,17 +21,21 @@ export default function SkuSelector({ visible, productId, onClose, onConfirm }) 
       ]);
       setSpecOptions(optionsRes.data || {});
       setSkus(skusRes.data || []);
-      
+
       // 重置选择
       setSelectedSpecs({});
       setSelectedSku(null);
       setQuantity(1);
     } catch (err) {
       console.error('加载SKU失败:', err);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [productId]);
+
+  useEffect(() => {
+    if (visible && productId) {
+      loadSkuData();
+    }
+  }, [visible, productId, loadSkuData]);
 
   const handleSpecSelect = (specName, value) => {
     const newSpecs = { ...selectedSpecs, [specName]: value };
@@ -49,7 +45,7 @@ export default function SkuSelector({ visible, productId, onClose, onConfirm }) 
     if (skus.length > 0) {
       const matched = skus.find(sku => {
         const specArr = typeof sku.spec === 'string' ? JSON.parse(sku.spec) : sku.spec;
-        return Object.entries(newSpecs).every(([key, val]) => 
+        return Object.entries(newSpecs).every(([key, val]) =>
           specArr[key] === val
         );
       });
@@ -178,4 +174,3 @@ const styles = StyleSheet.create({
   selectedStock: { fontSize: 13, color: '#999', marginTop: 4 },
   selectedCode: { fontSize: 12, color: '#bbb', marginTop: 2 },
 });
-
